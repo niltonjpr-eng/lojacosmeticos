@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NilSyste</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<style>
+:root{--bg:#f1f5f9;--sb:#1e293b;--sbt:#94a3b8;--pr:#6366f1;--prd:#4f46e5;--ac:#818cf8;--card:#ffffff;--tx:#1e293b;--txm:#64748b;--brd:#e2e8f0;--green:#16a34a;--yellow:#ca8a04;--red:#dc2626;--blue:#2563eb;--r:16px;--sh:0 2px 12px rgba(0,0,0,.06)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex}
+
+/* SIDEBAR */
+.sb{width:210px;min-height:100vh;background:var(--sb);display:flex;flex-direction:column;padding:24px 0;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sb-logo{padding:0 20px 24px;border-bottom:1px solid #2a2d3e;text-align:center}
+.sb-logo h2{color:#fff;font-size:1rem;font-weight:800}
+.sb-logo p{color:var(--sbt);font-size:.72rem;margin-top:2px}
+.sb nav{padding:16px 0;flex:1}
+.ni{display:flex;align-items:center;gap:12px;padding:12px 20px;color:var(--sbt);cursor:pointer;font-size:.88rem;font-weight:600;border-left:3px solid transparent;transition:all .18s}
+.ni:hover{color:#fff;background:rgba(255,255,255,.04)}
+.ni.active{color:#fff;background:rgba(233,30,140,.12);border-left-color:var(--pr)}
+.ni .ico{font-size:1.1rem;width:20px;text-align:center}
+.badge{margin-left:auto;background:var(--pr);color:#fff;font-size:.65rem;font-weight:800;border-radius:50px;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.sync{font-size:.75rem;opacity:0;transition:opacity .4s;margin-left:auto}
+.fb-badge{display:none;margin-top:6px;font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:50px;background:#27ae60;color:#fff;text-align:center}
+
+/* MAIN */
+.main{margin-left:210px;flex:1;padding:24px;min-height:100vh}
+
+/* BOTTOM NAV */
+.bnav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--sb);z-index:200;flex-direction:row;justify-content:space-around;padding:8px 0 10px;border-top:1px solid #2a2d3e}
+.bn{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--sbt);cursor:pointer;font-size:.62rem;font-weight:700;padding:4px 12px;border-radius:12px;transition:all .15s;position:relative}
+.bn .ico{font-size:1.3rem}
+.bn.active{color:var(--pr)}
+.bn-badge{position:absolute;top:0;right:6px;background:var(--pr);color:#fff;font-size:.55rem;font-weight:800;border-radius:50px;min-width:14px;height:14px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+
+/* MOBILE HEADER */
+.mhdr{display:none;background:var(--sb);color:#fff;padding:14px 16px;position:fixed;top:0;left:0;right:0;z-index:150}
+.mhdr h2{font-size:1rem;font-weight:800}
+.mhdr p{font-size:.7rem;color:var(--sbt)}
+
+/* PAGES */
+.page{display:none;animation:fadeIn .2s}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* CARD */
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:20px;margin-bottom:16px}
+.card-title{font-size:.95rem;font-weight:800;color:var(--tx);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* INPUTS */
+.ir{display:flex;gap:10px;flex-wrap:wrap}
+.ir input,.ir select,.fg input,.fg select{flex:1;min-width:130px;padding:11px 14px;border:1.5px solid var(--brd);border-radius:10px;font-family:inherit;font-size:.88rem;color:var(--tx);background:#fafafa;outline:none;transition:border .15s}
+.ir input:focus,.ir select:focus,.fg input:focus,.fg select:focus{border-color:var(--pr);background:#fff}
+.fg{margin-bottom:12px}
+.fg label{font-size:.75rem;font-weight:700;color:var(--txm);display:block;margin-bottom:5px}
+.fg input,.fg select{width:100%}
+
+/* BUTTONS */
+.btn{padding:12px 20px;border:none;border-radius:10px;font-family:inherit;font-size:.88rem;font-weight:800;cursor:pointer;transition:all .15s}
+.btn-p{background:var(--pr);color:#fff;width:100%;margin-top:10px}
+.btn-p:hover{background:var(--prd)}
+.btn-sm{padding:7px 14px;font-size:.78rem;border-radius:8px}
+.btn-g{background:var(--green);color:#fff}
+.btn-r{background:var(--red);color:#fff}
+.btn-b{background:var(--blue);color:#fff}
+.btn-dk{background:#1a1d2e;color:#fff}
+.btn-ol{background:transparent;border:1.5px solid var(--brd);color:var(--txm)}
+.btn-ol:hover{border-color:var(--pr);color:var(--pr)}
+
+/* BANNER */
+.banner{border-radius:var(--r);padding:20px 24px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.banner.red{background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff}
+.banner.pink{background:linear-gradient(135deg,var(--pr),var(--prd));color:#fff}
+.banner label{font-size:.75rem;font-weight:700;opacity:.85;text-transform:uppercase;letter-spacing:.5px}
+.banner h1{font-size:2rem;font-weight:800;margin-top:4px}
+.banner .sub{font-size:.8rem;opacity:.8;margin-top:2px}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:.75rem;font-weight:800;color:var(--txm);text-transform:uppercase;letter-spacing:.4px;padding:8px 12px;border-bottom:1.5px solid var(--brd)}
+.tbl td{padding:13px 12px;font-size:.88rem;border-bottom:1px solid var(--brd);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#fdf5fb}
+
+/* CHIPS */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:50px;font-size:.72rem;font-weight:800}
+.chip-g{background:#e8f8f0;color:var(--green)}
+.chip-y{background:#fef9e7;color:var(--yellow)}
+.chip-r{background:#fdecea;color:var(--red)}
+.chip-b{background:#e8f4fd;color:var(--blue)}
+.chip-gr{background:#f0f0f0;color:#888}
+.vr{color:var(--red);font-weight:700}
+.vg{color:var(--green);font-weight:700}
+.acts{display:flex;gap:6px}
+
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:flex-end;justify-content:center}
+.mo.open{display:flex}
+.md{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:540px;padding:24px;max-height:90vh;overflow-y:auto;animation:slideUp .22s ease}
+@media(min-width:701px){.mo{align-items:center}.md{border-radius:20px;max-width:600px;max-height:85vh}}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.md-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.md-hdr h3{font-size:1rem;font-weight:800}
+.md-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--txm)}
+
+/* EXTRATO */
+.ei{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--brd)}
+.ei:last-child{border-bottom:none}
+.ei-lbl{font-size:.85rem;font-weight:700}
+.ei-dt{font-size:.72rem;color:var(--txm)}
+.ei-val{font-size:.9rem;font-weight:800}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1d2e;color:#fff;padding:10px 22px;border-radius:50px;font-size:.82rem;font-weight:700;opacity:0;transition:all .25s;z-index:999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* TABS */
+.tabs{display:flex;gap:6px;margin-bottom:16px}
+.tab{padding:8px 16px;border-radius:50px;font-size:.8rem;font-weight:700;cursor:pointer;border:1.5px solid var(--brd);color:var(--txm);transition:all .15s;background:var(--card)}
+.tab.active{background:var(--pr);color:#fff;border-color:var(--pr)}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--txm)}
+.empty .ico{font-size:2.5rem;margin-bottom:10px}
+.empty p{font-size:.85rem}
+
+/* CONTA CARD */
+.cc{background:var(--card);border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:var(--sh);border-left:4px solid var(--brd);display:flex;align-items:center;gap:14px}
+.cc.vencido{border-left-color:var(--red)}
+.cc.vence-hoje{border-left-color:var(--yellow)}
+.cc.vence-breve{border-left-color:var(--blue)}
+.cc.pago{border-left-color:var(--green);opacity:.75}
+
+/* CLIENTE CARD */
+.clc{background:var(--card);border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:var(--sh);display:flex;align-items:center;gap:14px}
+.av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--pr),var(--ac));color:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;text-transform:uppercase;flex-shrink:0}
+.cl-info{flex:1}
+.cl-info .nome{font-size:.9rem;font-weight:800}
+.cl-info .tel{font-size:.72rem;color:var(--txm)}
+.cl-div{text-align:right}
+.cl-div .val{font-size:.95rem;font-weight:800}
+.cl-div label{font-size:.65rem;color:var(--txm);display:block}
+
+/* SALDO DEVEDOR */
+.saldo-dev{background:linear-gradient(135deg,var(--pr),var(--ac));border-radius:14px;padding:16px 20px;color:#fff;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.saldo-dev label{font-size:.72rem;font-weight:700;opacity:.85}
+.saldo-dev h2{font-size:1.6rem;font-weight:800}
+
+/* ESTOQUE CARD */
+.estc{background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--sh);border-left:4px solid var(--brd);display:flex;align-items:center;gap:12px}
+.estc.ok{border-left-color:var(--green)}
+.estc.baixo{border-left-color:var(--yellow)}
+.estc.esgotado{border-left-color:var(--red)}
+.estc.vencido{border-left-color:#9b59b6}
+.est-nome{font-size:.9rem;font-weight:800}
+.est-meta{font-size:.72rem;color:var(--txm);margin-top:2px}
+.qtd-b{min-width:42px;height:42px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+.qtd-b .n{font-size:1rem;line-height:1}
+.qtd-b .l{font-size:.55rem;text-transform:uppercase;opacity:.8}
+.qtd-b.ok{background:#e8f8f0;color:var(--green)}
+.qtd-b.baixo{background:#fef9e7;color:var(--yellow)}
+.qtd-b.esgotado{background:#fdecea;color:var(--red)}
+.qtd-b.vencido{background:#f3e5f5;color:#9b59b6}
+
+/* PDV */
+.pgto-btn{padding:12px 8px;border-radius:10px;border:1.5px solid var(--brd);background:var(--card);color:var(--txm);font-family:inherit;font-size:.82rem;font-weight:800;cursor:pointer;transition:all .15s}
+.pgto-btn.active{background:var(--pr);color:#fff;border-color:var(--pr)}
+.sug-item{padding:12px 14px;cursor:pointer;font-size:.88rem;font-weight:600;border-bottom:1px solid var(--brd);transition:background .1s;display:flex;align-items:center;justify-content:space-between}
+.sug-item:hover{background:#fdf5fb}
+.sug-item .sn{font-weight:800}
+.sug-item .si{font-size:.72rem;color:var(--txm)}
+.sug-new{padding:12px 14px;cursor:pointer;font-size:.82rem;font-weight:800;color:var(--pr);border-top:1px solid var(--brd);text-align:center}
+.sug-new:hover{background:#fdf5fb}
+.ci{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--brd)}
+.ci:last-child{border-bottom:none}
+.ci .cn{font-size:.88rem;font-weight:800}
+.ci .cm{font-size:.72rem;color:var(--txm)}
+.btn-rep{padding:6px 12px;border-radius:8px;border:1.5px solid var(--green);color:var(--green);background:#e8f8f0;font-family:inherit;font-size:.72rem;font-weight:800;cursor:pointer;transition:all .15s}
+.btn-rep:hover{background:var(--green);color:#fff}
+.sec-title{font-size:.78rem;font-weight:800;color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px}
+.alert-ban{background:#fef9e7;border:1.5px solid #f8d86a;border-radius:12px;padding:10px 16px;margin-bottom:14px;font-size:.82rem;font-weight:700;color:#856404;display:flex;align-items:center;gap:8px}
+.pb-btn{background:var(--card);border:1.5px solid var(--brd);color:var(--txm);font-weight:700}
+.pb-btn.active{background:var(--pr);color:#fff;border-color:var(--pr)}
+
+/* RESPONSIVE */
+@media(max-width:700px){.sb{display:none}.main{margin-left:0;padding:16px 12px 90px;padding-top:72px}.bnav{display:flex}.mhdr{display:block}.ir{flex-direction:column}.banner h1{font-size:1.5rem}.tbl{display:none}.sm{display:block !important}}
+.sm{display:none}
+
+/* PRINT */
+@media print{
+  body *{visibility:hidden}
+  #dv-print-area,#dv-print-area *{visibility:visible}
+  #dv-print-area{position:fixed;top:20px;left:20px;right:20px;background:#fff;padding:24px;border-radius:0}
+  .mo,.md-hdr,.btn{display:none!important}
+  #dv-print-header{display:block!important}
+  .saldo-dev{background:#6366f1!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<!-- TELA DE LOGIN -->
+<div id="tela-login" style="position:fixed;inset:0;background:#f1f5f9;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div style="font-size:4rem;margin-bottom:8px">🦇</div>
+  <h1 style="color:#6366f1;font-size:1.6rem;font-weight:800;letter-spacing:2px;text-transform:uppercase">NilSyste</h1>
+  <p style="color:#64748b;font-size:.82rem;margin-bottom:8px">Digite a senha para entrar</p>
+  <input type="password" id="inp-senha" inputmode="numeric" placeholder="••••"
+    onkeydown="if(event.key==='Enter')entrar()"
+    style="width:180px;padding:14px;text-align:center;font-size:1.4rem;letter-spacing:8px;border:2px solid #e2e8f0;border-radius:12px;background:#fff;color:#6366f1;outline:none;font-family:inherit">
+  <button onclick="entrar()"
+    style="width:180px;padding:14px;background:#6366f1;color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:800;cursor:pointer;letter-spacing:1px">
+    ENTRAR
+  </button>
+  <p id="login-erro" style="color:#e74c3c;font-size:.82rem;display:none">Senha incorreta</p>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="sb-logo">
+    <div style="display:flex;justify-content:center;align-items:center;gap:8px">
+      <h2 id="sb-nome">NilSyste</h2>
+      <span class="sync" id="sync-ico">✅</span>
+    </div>
+    <div class="fb-badge" id="fb-badge">🔥 ONLINE</div>
+  </div>
+  <nav>
+    <div class="ni" onclick="nav('pdv')" id="sn-pdv"><span class="ico">🖥️</span> PDV</div>
+    <div class="ni" onclick="nav('estoque')" id="sn-estoque"><span class="ico">📦</span> Estoque</div>
+    <div class="ni active" onclick="nav('clientes')" id="sn-clientes"><span class="ico">👤</span> Clientes</div>
+    <div class="ni" onclick="nav('contas')" id="sn-contas"><span class="ico">💰</span> Contas <span class="badge" id="badge-c">0</span></div>
+    <div class="ni" onclick="nav('devedores')" id="sn-devedores"><span class="ico">📋</span> Devedores <span class="badge" id="badge-dv">0</span></div>
+    <div class="ni" onclick="nav('config')" id="sn-config"><span class="ico">⚙️</span> Config</div>
+  </nav>
+</aside>
+
+<!-- MOBILE HEADER -->
+<div class="mhdr">
+  <h2 id="mh-nome">NilSyste</h2>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <div class="bn" onclick="nav('pdv')" id="bn-pdv"><span class="ico">🖥️</span>PDV</div>
+  <div class="bn" onclick="nav('estoque')" id="bn-estoque"><span class="ico">📦</span>Estoque</div>
+  <div class="bn active" onclick="nav('clientes')" id="bn-clientes"><span class="ico">👤</span>Clientes</div>
+  <div class="bn" onclick="nav('contas')" id="bn-contas"><span class="ico">💰</span>Contas<span class="bn-badge" id="mbadge-c">0</span></div>
+  <div class="bn" onclick="nav('devedores')" id="bn-devedores"><span class="ico">📋</span>Devedores</div>
+  <div class="bn" onclick="nav('config')" id="bn-config"><span class="ico">⚙️</span>Config</div>
+</nav>
+
+<main class="main">
+
+<!-- PAGE: CLIENTES -->
+<div class="page active" id="pg-clientes">
+  <div class="card">
+    <div class="card-title">👤 Novo Cliente</div>
+    <div class="ir">
+      <input type="text" id="c-nome" placeholder="Nome do cliente">
+      <input type="text" id="c-tel" placeholder="Telefone">
+    </div>
+    <button class="btn btn-p" onclick="addCliente()">CADASTRAR CLIENTE</button>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 8px">
+    <div class="sec-title" style="margin:0">Clientes Cadastrados</div>
+  </div>
+  <div id="lista-cli"></div>
+</div>
+
+<!-- PAGE: CONTAS -->
+<div class="page" id="pg-contas">
+  <div id="alv" class="alert-ban" style="display:none">⚠️ <span id="alv-txt"></span></div>
+  <div class="banner red">
+    <div>
+      <label>TOTAL DE CONTAS</label>
+      <h1 id="tot-contas">R$ 0,00</h1>
+      <div class="sub" id="sub-contas">0 pendências</div>
+    </div>
+    <span style="font-size:2.5rem">💰</span>
+  </div>
+  <div class="card">
+    <div class="card-title">💸 Nova Despesa</div>
+    <div class="fg"><label>Descrição</label><input type="text" id="ct-desc" placeholder="Ex: Conta de luz"></div>
+    <div class="ir">
+      <div style="flex:1"><div class="fg"><label>Valor R$</label><input type="number" id="ct-val" placeholder="0,00"></div></div>
+      <div style="flex:1"><div class="fg"><label>Vencimento</label><input type="date" id="ct-data"></div></div>
+    </div>
+    <div class="fg">
+      <label>Categoria</label>
+      <select id="ct-cat">
+        <option value="💧">💧 Água</option><option value="💡">💡 Luz</option>
+        <option value="🌐">🌐 Internet</option><option value="📄">📄 Boleto</option>
+        <option value="🏪">🏪 Aluguel</option><option value="📦">📦 Fornecedor</option>
+        <option value="🔧">🔧 Manutenção</option><option value="📋">📋 Outros</option>
+      </select>
+    </div>
+    <button class="btn btn-p" onclick="addConta()">LANÇAR CONTA</button>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="filtConta('todas',this)">Todas</div>
+    <div class="tab" onclick="filtConta('pendente',this)">Pendentes</div>
+    <div class="tab" onclick="filtConta('vencido',this)">Vencidas</div>
+    <div class="tab" onclick="filtConta('pago',this)">Pagas</div>
+  </div>
+  <div class="card"><table class="tbl"><thead><tr><th>Descrição</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Ação</th></tr></thead><tbody id="tb-contas"></tbody></table>
+    <div id="empty-c" class="empty"><div class="ico">💸</div><p>Nenhuma conta lançada</p></div>
+  </div>
+  <div class="sm" id="mob-contas"></div>
+</div>
+
+<!-- PAGE: PDV -->
+<div class="page" id="pg-pdv">
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">🛒 Novo Atendimento</div>
+    <div style="position:relative;margin-bottom:10px">
+      <input type="text" id="pdv-busca" placeholder="🔍 Nome ou código do produto..." autocomplete="off" oninput="pdvBusca(this.value)"
+        style="padding:12px 14px;border:1.5px solid var(--brd);border-radius:10px;width:100%;font-family:inherit;font-size:.92rem;outline:none">
+      <div id="pdv-sug" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:#fff;border:1.5px solid var(--brd);border-radius:0 0 12px 12px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.1)"></div>
+    </div>
+    <div id="pdv-psel" style="display:none;background:#f7f0f5;border-radius:12px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div id="pdv-pnome" style="font-weight:800;font-size:.95rem"></div><div id="pdv-pinfo" style="font-size:.75rem;color:var(--txm);margin-top:2px"></div></div>
+        <button onclick="pdvLimpProd()" style="background:none;border:none;color:var(--txm);font-size:1.1rem;cursor:pointer">✕</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
+        <button onclick="pdvQtd(-1)" style="width:36px;height:36px;border-radius:50%;border:1.5px solid var(--brd);background:#fff;font-size:1.1rem;cursor:pointer;font-weight:800">−</button>
+        <input type="number" id="pdv-qtd" value="1" min="1" style="width:60px;text-align:center;padding:8px;border:1.5px solid var(--brd);border-radius:8px;font-size:1rem;font-family:inherit">
+        <button onclick="pdvQtd(1)" style="width:36px;height:36px;border-radius:50%;border:1.5px solid var(--brd);background:#fff;font-size:1.1rem;cursor:pointer;font-weight:800">+</button>
+        <button class="btn btn-p" style="flex:1;margin:0" onclick="pdvAdd()">+ Adicionar</button>
+      </div>
+    </div>
+    <div id="pdv-nprod" style="display:none;background:#fff8e1;border:1.5px solid #f8d86a;border-radius:12px;padding:14px;margin-bottom:10px">
+      <div style="font-size:.8rem;font-weight:800;color:#856404;margin-bottom:10px">📦 Produto não encontrado — cadastrar agora</div>
+      <div class="ir" style="gap:8px">
+        <input type="text" id="np-nome" placeholder="Nome" style="flex:2">
+        <input type="text" id="np-cod" placeholder="Código">
+        <input type="number" id="np-preco" placeholder="Preço R$">
+        <input type="number" id="np-qtd" placeholder="Qtd estoque">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-sm btn-g" onclick="pdvCadProd()" style="flex:1">✅ Salvar e adicionar</button>
+        <button class="btn btn-sm btn-ol" onclick="document.getElementById('pdv-nprod').style.display='none'" style="flex:1">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div id="pdv-cvazio" class="empty" style="padding:24px"><div class="ico">🛍️</div><p>Carrinho vazio</p></div>
+    <div id="pdv-clista"></div>
+    <div id="pdv-ctot" style="display:none;border-top:2px solid var(--brd);margin-top:10px;padding-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:800;font-size:.9rem;color:var(--txm)">TOTAL</span>
+        <span id="pdv-tval" style="font-size:1.4rem;font-weight:800;color:var(--pr)">R$ 0,00</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="pdv-pgto" style="display:none;margin-bottom:16px">
+    <div class="card-title">💳 Forma de Pagamento</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <button class="pgto-btn active" onclick="pdvPgto('dinheiro',this)">💵 Dinheiro</button>
+      <button class="pgto-btn" onclick="pdvPgto('pix',this)">📲 PIX</button>
+      <button class="pgto-btn" onclick="pdvPgto('cartao',this)">💳 Cartão</button>
+      <button class="pgto-btn" onclick="pdvPgto('fiado',this)">📋 Fiado</button>
+    </div>
+    <div id="pdv-troco" style="background:#f0fff4;border-radius:10px;padding:12px;margin-bottom:12px">
+      <div class="fg" style="margin-bottom:6px"><label>Valor recebido R$</label>
+        <input type="number" id="pdv-receb" placeholder="0,00" oninput="calcTroco()">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-weight:800">
+        <span style="color:var(--txm);font-size:.85rem">TROCO</span>
+        <span id="pdv-trocoVal" style="font-size:1.1rem;color:var(--green)">R$ 0,00</span>
+      </div>
+    </div>
+    <div id="pdv-fiado" style="display:none;background:#fdf5fb;border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="font-size:.78rem;font-weight:800;color:var(--txm);margin-bottom:8px">Vincular ao cliente</div>
+      <div style="position:relative">
+        <input type="text" id="pdv-clibusca" placeholder="🔍 Nome do cliente..." oninput="pdvBuscaCli(this.value)" autocomplete="off"
+          style="padding:11px 14px;border:1.5px solid var(--brd);border-radius:10px;width:100%;font-family:inherit;font-size:.88rem;outline:none">
+        <div id="pdv-clisug" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:#fff;border:1.5px solid var(--brd);border-radius:0 0 12px 12px;max-height:180px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.1)"></div>
+      </div>
+      <div id="pdv-clisel" style="display:none;margin-top:8px;background:#fff;border-radius:8px;padding:10px;align-items:center;justify-content:space-between">
+        <div><div id="pdv-csnome" style="font-weight:800;font-size:.88rem"></div><div id="pdv-cstel" style="font-size:.7rem;color:var(--txm)"></div></div>
+        <button onclick="pdvLimpCli()" style="background:none;border:none;color:var(--txm);cursor:pointer">✕</button>
+      </div>
+      <div id="pdv-ncli" style="display:none;margin-top:8px;background:#fff3e0;border:1.5px solid #f8d86a;border-radius:10px;padding:12px">
+        <div style="font-size:.78rem;font-weight:800;color:#856404;margin-bottom:8px">👤 Cliente novo — cadastrar agora</div>
+        <div class="ir" style="gap:8px">
+          <input type="text" id="nc-nome" placeholder="Nome">
+          <input type="text" id="nc-tel" placeholder="Telefone">
+        </div>
+        <button class="btn btn-sm btn-g" style="width:100%;margin-top:8px" onclick="pdvCadCli()">✅ Salvar e vincular</button>
+      </div>
+    </div>
+    <button class="btn btn-p" style="font-size:1rem" onclick="pdvFinalizar()">✅ FECHAR VENDA</button>
+  </div>
+
+  <div id="pdv-rec" style="display:none">
+    <div class="card" style="border:2px dashed var(--pr);text-align:center;padding:20px">
+      <div style="font-size:1.1rem;font-weight:800;color:var(--pr)" id="rec-loja"></div>
+      <div style="font-size:.75rem;color:var(--txm)" id="rec-tel"></div>
+      <div style="border-top:1px dashed var(--brd);border-bottom:1px dashed var(--brd);margin:12px 0;padding:10px 0;text-align:left">
+        <div style="font-size:.75rem;margin-bottom:4px"><b>CLIENTE:</b> <span id="rec-cli"></span></div>
+        <div style="font-size:.75rem;margin-bottom:8px"><b>DATA:</b> <span id="rec-data"></span></div>
+        <div id="rec-itens" style="font-size:.82rem"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:.85rem;font-weight:700">TOTAL</span>
+        <span id="rec-tot" style="font-size:1.2rem;font-weight:800;color:var(--pr)"></span>
+      </div>
+      <div id="rec-pgto" style="font-size:.78rem;color:var(--txm);margin-bottom:4px"></div>
+      <div id="rec-troco" style="display:none;font-size:.78rem;font-weight:800;color:var(--green)"></div>
+      <div style="margin-top:14px;font-size:.75rem;color:var(--txm)">Obrigado pela preferência! ✨</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-p" style="flex:1" onclick="window.print()">🖨️ Imprimir</button>
+      <button class="btn btn-ol" style="flex:1" onclick="pdvNova()">+ Nova Venda</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: ESTOQUE -->
+<div class="page" id="pg-estoque">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+    <div class="card" style="padding:14px;text-align:center;margin:0"><div style="font-size:.65rem;font-weight:800;color:var(--txm);text-transform:uppercase">Produtos</div><div id="est-tot" style="font-size:1.3rem;font-weight:800">0</div></div>
+    <div class="card" style="padding:14px;text-align:center;margin:0"><div style="font-size:.65rem;font-weight:800;color:var(--yellow);text-transform:uppercase">⚠️ Baixo</div><div id="est-baixo" style="font-size:1.3rem;font-weight:800;color:var(--yellow)">0</div></div>
+    <div class="card" style="padding:14px;text-align:center;margin:0"><div style="font-size:.65rem;font-weight:800;color:var(--red);text-transform:uppercase">🚫 Esgotado</div><div id="est-esgt" style="font-size:1.3rem;font-weight:800;color:var(--red)">0</div></div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div id="est-form-title" class="card-title">📦 Novo Produto</div>
+    <input type="hidden" id="est-eid">
+    <div class="fg"><label>Nome do produto</label><input type="text" id="est-nome" placeholder="Ex: Perfume La Vie Est Belle"></div>
+    <div class="ir">
+      <div style="flex:1"><div class="fg"><label>Código</label><input type="text" id="est-cod" placeholder="001"></div></div>
+      <div style="flex:1"><div class="fg"><label>Preço R$</label><input type="number" id="est-preco" placeholder="0,00"></div></div>
+    </div>
+    <div class="ir">
+      <div style="flex:1"><div class="fg"><label>Quantidade</label><input type="number" id="est-qtd" placeholder="0"></div></div>
+      <div style="flex:1"><div class="fg"><label>Validade (opcional)</label><input type="date" id="est-venc"></div></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-p" style="flex:1;margin:0" onclick="estSalvar()">💾 Salvar</button>
+      <button id="est-bcnc" class="btn btn-ol" style="flex:1;margin:0;display:none" onclick="estCancelar()">Cancelar</button>
+    </div>
+  </div>
+  <div style="margin-bottom:12px">
+    <input type="text" id="est-busca" placeholder="🔍 Buscar produto..." oninput="renderEst()"
+      style="padding:11px 14px;border:1.5px solid var(--brd);border-radius:10px;width:100%;font-family:inherit;font-size:.88rem;outline:none;background:#fff">
+  </div>
+  <div class="tabs" style="margin-bottom:12px">
+    <div class="tab active" onclick="estFilt('todos',this)">Todos</div>
+    <div class="tab" onclick="estFilt('baixo',this)">⚠️ Baixo</div>
+    <div class="tab" onclick="estFilt('esgotado',this)">🚫 Esgotado</div>
+    <div class="tab" onclick="estFilt('vencido',this)">📅 Vencido</div>
+  </div>
+  <div id="est-lista"></div>
+</div>
+
+<!-- PAGE: CONFIG -->
+<div class="page" id="pg-config">
+  <div class="card" style="border:1.5px solid #c8e6c9;background:#f9fef9">
+    <div class="card-title" style="color:#2e7d32" id="cfg-status-lbl">🔥 Status Firebase</div>
+    <div id="cfg-fb-status" style="font-size:.85rem;color:#555">Verificando conexão...</div>
+  </div>
+  <div class="card">
+    <div class="card-title">✨ Dados da Loja</div>
+    <div class="fg"><label>Nome da loja</label><input type="text" id="cfg-nome" placeholder="NilSyste"></div>
+    <div class="fg"><label>Telefone / WhatsApp</label><input type="text" id="cfg-tel" placeholder="(00) 00000-0000"></div>
+    <div class="fg"><label>Endereço (opcional)</label><input type="text" id="cfg-end" placeholder="Rua das Flores, 123"></div>
+    <button class="btn btn-p" onclick="cfgSalvar()">💾 Salvar dados</button>
+  </div>
+  <div class="card">
+    <div class="card-title">📦 Alertas de Estoque</div>
+    <div class="fg"><label>Qtd mínima para alerta "Estoque Baixo"</label><input type="number" id="cfg-estmin" value="2" min="1"></div>
+    <button class="btn btn-p" onclick="cfgSalvarEst()">💾 Salvar</button>
+  </div>
+  <div class="card">
+    <div class="card-title">💾 Backup</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-dk" onclick="exportar()" style="flex:1">📥 Exportar JSON</button>
+      <label class="btn btn-sm btn-ol" style="flex:1;text-align:center;cursor:pointer">📤 Importar
+        <input type="file" id="imp-file" accept=".json" style="display:none" onchange="importar(event)">
+      </label>
+    </div>
+  </div>
+  <div class="card" style="border:1.5px solid #fdecea">
+    <div class="card-title" style="color:var(--red)">⚠️ Zona de Perigo</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-r" onclick="resetar()" style="flex:1">💣 Resetar tudo</button>
+    </div>
+  </div>
+  <div style="margin-bottom:24px"></div>
+</div>
+
+<!-- PAGE: DEVEDORES -->
+<div class="page" id="pg-devedores">
+  <div class="banner red" style="margin-bottom:16px">
+    <div>
+      <label>TOTAL EM ABERTO</label>
+      <h1 id="dv-total">R$ 0,00</h1>
+      <div class="sub" id="dv-sub">0 devedores</div>
+    </div>
+    <span style="font-size:2.5rem">📋</span>
+  </div>
+
+  <div style="margin-bottom:12px">
+    <input type="text" id="dv-busca" placeholder="🔍 Buscar devedor..." oninput="renderDevedores()"
+      style="padding:11px 14px;border:1.5px solid var(--brd);border-radius:10px;width:100%;font-family:inherit;font-size:.88rem;outline:none;background:#fff;color:var(--tx)">
+  </div>
+
+  <div id="lista-dv"></div>
+</div>
+
+</main>
+
+<!-- MODAL: EXTRATO -->
+<div class="mo" id="mo-ext">
+  <div class="md">
+    <div class="md-hdr">
+      <h3>📋 Extrato — <span id="ext-nome"></span></h3>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-sm" onclick="copiarExt()" style="background:#25D366;color:#fff;font-size:.78rem">📲 WhatsApp</button>
+        <button class="md-close" onclick="closeModal('mo-ext')">✕</button>
+      </div>
+    </div>
+    <div class="saldo-dev">
+      <div><label>SALDO DEVEDOR</label><h2 id="ext-saldo">R$ 0,00</h2></div>
+      <span style="font-size:2rem">💳</span>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="tabExt('lanc',this)">+ Fiado</div>
+      <div class="tab" onclick="tabExt('pgto',this)">💵 Pagamento</div>
+    </div>
+    <div id="tab-lanc">
+      <div class="fg"><label>Descrição do fiado</label><input type="text" id="ex-desc" placeholder="Ex: Perfume X, 2 cremes..."></div>
+      <div class="ir">
+        <div style="flex:1"><div class="fg"><label>Valor R$</label><input type="number" id="ex-val" placeholder="0,00"></div></div>
+        <div style="flex:1"><div class="fg"><label>Prazo pagamento</label><input type="date" id="ex-prazo"></div></div>
+      </div>
+      <button class="btn btn-p" onclick="addFiado()">LANÇAR FIADO</button>
+    </div>
+    <div id="tab-pgto" style="display:none">
+      <div class="fg"><label>Valor recebido R$</label><input type="number" id="pg-val" placeholder="Ex: 10,00"></div>
+      <div class="fg"><label>Observação (opcional)</label><input type="text" id="pg-obs" placeholder="PIX, dinheiro..."></div>
+      <button class="btn btn-p" style="background:var(--green)" onclick="addPgto()">REGISTRAR PAGAMENTO</button>
+    </div>
+    <div class="sec-title" style="margin-top:20px">Histórico</div>
+    <div id="ext-lista"></div>
+  </div>
+</div>
+
+<!-- MODAL: HISTÓRICO DEVEDOR -->
+<div class="mo" id="mo-dv">
+  <div class="md" style="max-width:680px">
+    <div class="md-hdr">
+      <h3>📋 <span id="dv-nome-modal"></span></h3>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-sm btn-g" onclick="dvImprimir()" style="display:flex;align-items:center;gap:5px">🖨️ PDF</button>
+        <button class="md-close" onclick="closeModal('mo-dv')">✕</button>
+      </div>
+    </div>
+
+    <div id="dv-print-area">
+      <div style="text-align:center;margin-bottom:16px;display:none" id="dv-print-header">
+        <h2 style="font-size:1.1rem;font-weight:800" id="dv-ph-loja"></h2>
+        <div style="font-size:.8rem;color:#666">Relatório de Débitos</div>
+        <div style="font-size:.75rem;color:#888" id="dv-ph-data"></div>
+      </div>
+
+      <div class="saldo-dev" id="dv-saldo-box">
+        <div><label>SALDO DEVEDOR</label><h2 id="dv-saldo-val">R$ 0,00</h2>
+          <div style="font-size:.72rem;opacity:.8" id="dv-saldo-info"></div>
+        </div>
+        <span style="font-size:2rem">💳</span>
+      </div>
+
+      <div class="sec-title">Histórico de lançamentos</div>
+      <div id="dv-hist-lista"></div>
+
+      <div style="margin-top:16px;padding-top:12px;border-top:2px solid var(--brd);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:.85rem;font-weight:700;color:var(--txm)">TOTAL EM ABERTO</span>
+        <span id="dv-total-modal" style="font-size:1.2rem;font-weight:800;color:var(--red)"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── LOGIN ─────────────────────────────────────────────
+function entrar() {
+  if (document.getElementById('inp-senha').value === '1234') {
+    document.getElementById('tela-login').style.display = 'none';
+  } else {
+    document.getElementById('login-erro').style.display = 'block';
+    document.getElementById('inp-senha').value = '';
+    document.getElementById('inp-senha').focus();
+  }
+}
+
+// ── FIREBASE ──────────────────────────────────────────
+firebase.initializeApp({ databaseURL: "https://bellagestao-a53b7-default-rtdb.firebaseio.com/" });
+const dbRef = firebase.database().ref('perfumaria');
+
+// ── STATE ─────────────────────────────────────────────
+let produtos = [], clientes = [], contas = [];
+let appConfig = { nome: 'NilSyste', tel: '', end: '', estoqueMin: 2 };
+let carrinho = [], pdvProd = null, pdvCli = null, pdvTipo = 'dinheiro';
+let cliAtivo = null, filtContas = 'todas', estFiltAtivo = 'todos';
+let _saving = false;
+
+// ── FIREBASE SYNC ─────────────────────────────────────
+function salvar() {
+  if (_saving) return;
+  _saving = true;
+  dbRef.set({ produtos, clientes, contas, appConfig })
+    .then(() => { _saving = false; syncIco('✅'); })
+    .catch(e => { _saving = false; syncIco('❌'); console.error(e); });
+}
+
+function syncIco(ic) {
+  const el = document.getElementById('sync-ico');
+  el.textContent = ic; el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0', 2000);
+}
+
+// Firebase armazena arrays vazios como null; converte objetos/null para array
+function toArr(v) {
+  if (!v) return [];
+  if (Array.isArray(v)) return v;
+  return Object.values(v);
+}
+
+// Carrega dados ao abrir e escuta mudanças em tempo real
+dbRef.on('value', snap => {
+  const d = snap.val();
+  if (d) {
+    produtos = toArr(d.produtos);
+    clientes = toArr(d.clientes).map(c => ({ ...c, extrato: toArr(c.extrato) }));
+    contas   = toArr(d.contas);
+    if (d.appConfig) {
+      appConfig = Object.assign({}, appConfig, d.appConfig);
+      if (appConfig.nome === 'Minha Perfumaria') { appConfig.nome = 'NilSyste'; salvar(); }
+    }
+  }
+  initApp();
+}, err => { console.error('Firebase:', err); initApp(); });
+
+// ── UTILS ─────────────────────────────────────────────
+const fmt  = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+const fmtD = d => d ? d.split('-').reverse().join('/') : '—';
+const hoje = () => { const h = new Date(); h.setHours(0,0,0,0); return h; };
+const toast = msg => {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+};
+function stConta(data, pago) {
+  if (pago) return 'pago';
+  const h = hoje(), v = new Date(data + 'T00:00:00');
+  const d = Math.ceil((v - h) / 86400000);
+  if (d < 0) return 'vencido';
+  if (d === 0) return 'vence-hoje';
+  if (d <= 5) return 'vence-breve';
+  return 'pendente';
+}
+function chipConta(st) {
+  const m = { pago:['chip-g','✅ Pago'], vencido:['chip-r','🔴 Vencido'], 'vence-hoje':['chip-y','⚠️ Vence hoje'], 'vence-breve':['chip-b','🔵 Vence em breve'], pendente:['chip-gr','⬜ Pendente'] };
+  const [c, l] = m[st] || ['chip-gr','—'];
+  return `<span class="chip ${c}">${l}</span>`;
+}
+function saldoCli(c) {
+  return c.extrato.reduce((a, e) => e.tipo === 'fiado' ? a + e.valor : a - e.valor, 0);
+}
+function estSt(p) {
+  const h = hoje();
+  if (p.venc && new Date(p.venc + 'T12:00:00') < h) return 'vencido';
+  if (p.qtd === 0) return 'esgotado';
+  if (p.qtd <= appConfig.estoqueMin) return 'baixo';
+  return 'ok';
+}
+
+// ── NAV ───────────────────────────────────────────────
+function nav(pg) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.bn').forEach(n => n.classList.remove('active'));
+  document.getElementById('pg-' + pg).classList.add('active');
+  document.getElementById('sn-' + pg).classList.add('active');
+  document.getElementById('bn-' + pg).classList.add('active');
+  if (pg === 'estoque') renderEst();
+  if (pg === 'clientes') renderCli();
+  if (pg === 'contas') renderContas();
+  if (pg === 'devedores') renderDevedores();
+  if (pg === 'config') renderCfg();
+}
+
+// ── INIT ──────────────────────────────────────────────
+function initApp() {
+  // Atualiza header
+  const n = appConfig.nome || 'NilSyste';
+  const t = appConfig.tel  || '';
+  document.getElementById('sb-nome').textContent = n;
+  document.getElementById('mh-nome').textContent = n;
+  document.getElementById('fb-badge').style.display = 'block';
+  // Render aba ativa
+  const active = document.querySelector('.page.active');
+  if (active) {
+    const id = active.id.replace('pg-', '');
+    if (id === 'clientes') renderCli();
+    else if (id === 'contas') renderContas();
+    else if (id === 'estoque') renderEst();
+    else if (id === 'config') renderCfg();
+    else if (id === 'devedores') renderDevedores();
+    else if (id === 'pdv') renderPdvSelects();
+  }
+  // Badge contas vencidas
+  const venc = contas.filter(c => stConta(c.data, c.pago) === 'vencido').length;
+  document.getElementById('badge-c').textContent  = venc;
+  document.getElementById('mbadge-c').textContent = venc;
+}
+
+// ── CLIENTES ──────────────────────────────────────────
+function renderCli() {
+  const el = document.getElementById('lista-cli');
+  if (!clientes.length) { el.innerHTML = '<div class="empty"><div class="ico">👤</div><p>Nenhum cliente cadastrado</p></div>'; return; }
+  el.innerHTML = clientes.map(c => {
+    const saldo = saldoCli(c);
+    const sc = saldo > 0 ? 'vr' : 'vg';
+    return `<div class="clc">
+      <div class="av">${c.nome[0]}</div>
+      <div class="cl-info"><div class="nome">${c.nome}</div><div class="tel">${c.tel}</div></div>
+      <div class="cl-div"><label>Dívida</label><div class="val ${sc}">${fmt(Math.max(0, saldo))}</div></div>
+      <div class="acts" style="margin-left:8px">
+        <button class="btn btn-sm btn-b" onclick="openExt(${c.id})">📋</button>
+        <button class="btn btn-sm btn-r" onclick="delCli(${c.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addCliente() {
+  const nome = document.getElementById('c-nome').value.trim();
+  const tel  = document.getElementById('c-tel').value.trim();
+  if (!nome) { toast('Informe o nome'); return; }
+  clientes.push({ id: Date.now(), nome, tel: tel || '—', extrato: [] });
+  document.getElementById('c-nome').value = '';
+  document.getElementById('c-tel').value  = '';
+  salvar();
+  renderCli();
+  toast('✅ Cliente cadastrado!');
+}
+
+function delCli(id) {
+  if (!confirm('Remover cliente?')) return;
+  clientes = clientes.filter(c => c.id !== id);
+  salvar(); renderCli(); toast('Cliente removido');
+}
+
+// ── EXTRATO ───────────────────────────────────────────
+function openExt(id) {
+  cliAtivo = clientes.find(c => c.id === id);
+  document.getElementById('ext-nome').textContent = cliAtivo.nome;
+  renderExt();
+  document.getElementById('mo-ext').classList.add('open');
+  tabExt('lanc', document.querySelector('#mo-ext .tab'));
+}
+
+function renderExt() {
+  const saldo = saldoCli(cliAtivo);
+  document.getElementById('ext-saldo').textContent = fmt(Math.max(0, saldo));
+  const el = document.getElementById('ext-lista');
+  if (!cliAtivo.extrato.length) { el.innerHTML = '<div class="empty" style="padding:20px"><div class="ico">📄</div><p>Sem lançamentos</p></div>'; return; }
+  el.innerHTML = [...cliAtivo.extrato].reverse().map(e => {
+    const f = e.tipo === 'fiado';
+    return `<div class="ei">
+      <div><div class="ei-lbl">${f ? '🛒' : '💵'} ${e.desc}</div>
+      <div class="ei-dt">${fmtD(e.data)}${e.prazo ? ' · Prazo: ' + fmtD(e.prazo) : ''}</div></div>
+      <div class="ei-val ${f ? 'vr' : 'vg'}">${f ? '+' : '-'} ${fmt(e.valor)}</div>
+    </div>`;
+  }).join('');
+}
+
+function tabExt(tab, el) {
+  document.querySelectorAll('#mo-ext .tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('tab-lanc').style.display = tab === 'lanc' ? 'block' : 'none';
+  document.getElementById('tab-pgto').style.display = tab === 'pgto' ? 'block' : 'none';
+}
+
+function addFiado() {
+  const desc  = document.getElementById('ex-desc').value.trim();
+  const valor = parseFloat(document.getElementById('ex-val').value);
+  const prazo = document.getElementById('ex-prazo').value;
+  if (!desc || isNaN(valor) || valor <= 0) { toast('Preencha descrição e valor'); return; }
+  const data = new Date().toISOString().split('T')[0];
+  cliAtivo.extrato.push({ tipo: 'fiado', desc, valor, data, prazo: prazo || null });
+  document.getElementById('ex-desc').value = '';
+  document.getElementById('ex-val').value  = '';
+  document.getElementById('ex-prazo').value = '';
+  salvar(); renderExt(); renderCli();
+  toast('📦 Fiado lançado!');
+}
+
+function addPgto() {
+  const valor = parseFloat(document.getElementById('pg-val').value);
+  const obs   = document.getElementById('pg-obs').value.trim() || 'Pagamento';
+  if (isNaN(valor) || valor <= 0) { toast('Informe o valor'); return; }
+  const saldo = saldoCli(cliAtivo);
+  if (valor > saldo) { toast('⚠️ Valor maior que a dívida'); return; }
+  const data = new Date().toISOString().split('T')[0];
+  cliAtivo.extrato.push({ tipo: 'pagamento', desc: obs, valor, data });
+  document.getElementById('pg-val').value = '';
+  document.getElementById('pg-obs').value = '';
+  salvar(); renderExt(); renderCli();
+  toast('💵 Pagamento registrado!');
+}
+
+function copiarExt() {
+  const saldo = saldoCli(cliAtivo);
+  let txt = `*Extrato - ${cliAtivo.nome}*\n\n`;
+  cliAtivo.extrato.forEach(e => {
+    txt += `${e.tipo === 'fiado' ? '🛒' : '💵'} ${e.desc} - ${fmt(e.valor)} (${fmtD(e.data)})\n`;
+  });
+  txt += `\n*Saldo devedor: ${fmt(Math.max(0, saldo))}*`;
+  navigator.clipboard.writeText(txt).then(() => toast('📋 Copiado!')).catch(() => toast('Erro ao copiar'));
+}
+
+// ── CONTAS ────────────────────────────────────────────
+function renderContas() {
+  const h = hoje();
+  let tot = 0, pend = 0, vencArr = [];
+  const filt = filtContas;
+  const rows = contas.filter(c => {
+    const st = stConta(c.data, c.pago);
+    if (!c.pago) { tot += c.valor; pend++; }
+    if (st === 'vencido') vencArr.push(c);
+    return filt === 'todas' || st === filt;
+  });
+
+  document.getElementById('tot-contas').textContent = fmt(tot);
+  document.getElementById('sub-contas').textContent = pend + ' pendência' + (pend !== 1 ? 's' : '');
+
+  const alv = document.getElementById('alv');
+  if (vencArr.length) {
+    alv.style.display = 'flex';
+    document.getElementById('alv-txt').textContent = vencArr.length + ' conta(s) vencida(s)!';
+  } else { alv.style.display = 'none'; }
+
+  const tb = document.getElementById('tb-contas');
+  const ec = document.getElementById('empty-c');
+  const mb = document.getElementById('mob-contas');
+
+  if (!rows.length) {
+    tb.innerHTML = ''; ec.style.display = 'block';
+    mb.innerHTML = '<div class="empty"><div class="ico">💸</div><p>Nenhuma conta</p></div>';
+    return;
+  }
+  ec.style.display = 'none';
+  tb.innerHTML = rows.map(c => {
+    const st = stConta(c.data, c.pago);
+    return `<tr><td>${c.cat} ${c.desc}</td><td>${fmtD(c.data)}</td><td>${fmt(c.valor)}</td><td>${chipConta(st)}</td><td>
+      <div class="acts">
+        <button class="btn btn-sm btn-g" onclick="pagarC(${c.id})">${c.pago ? 'Reabrir' : 'Pago'}</button>
+        <button class="btn btn-sm btn-r" onclick="delC(${c.id})">✕</button>
+      </div></td></tr>`;
+  }).join('');
+  mb.innerHTML = rows.map(c => {
+    const st = stConta(c.data, c.pago);
+    return `<div class="cc ${st}">
+      <span style="font-size:1.6rem">${c.cat}</span>
+      <div style="flex:1"><div style="font-size:.9rem;font-weight:800">${c.desc}</div>
+        <div style="font-size:.72rem;color:var(--txm)">${fmtD(c.data)} · ${chipConta(st)}</div></div>
+      <div style="text-align:right"><div style="font-size:1rem;font-weight:800">${fmt(c.valor)}</div>
+        <div class="acts" style="margin-top:6px;justify-content:flex-end">
+          <button class="btn btn-sm btn-g" style="padding:5px 10px" onclick="pagarC(${c.id})">${c.pago ? '↩' : '✓'}</button>
+          <button class="btn btn-sm btn-r" style="padding:5px 10px" onclick="delC(${c.id})">✕</button>
+        </div></div>
+    </div>`;
+  }).join('');
+}
+
+function addConta() {
+  const desc  = document.getElementById('ct-desc').value.trim();
+  const valor = parseFloat(document.getElementById('ct-val').value);
+  const data  = document.getElementById('ct-data').value;
+  const cat   = document.getElementById('ct-cat').value;
+  if (!desc || isNaN(valor) || !data) { toast('Preencha todos os campos'); return; }
+  contas.push({ id: Date.now(), desc, valor, data, cat, pago: false });
+  document.getElementById('ct-desc').value = '';
+  document.getElementById('ct-val').value  = '';
+  document.getElementById('ct-data').value = '';
+  salvar(); renderContas(); initApp();
+  toast('✅ Conta lançada!');
+}
+
+function pagarC(id) {
+  const c = contas.find(c => c.id === id);
+  if (c) { c.pago = !c.pago; salvar(); renderContas(); initApp(); toast(c.pago ? '✅ Marcada como paga' : 'Reaberta'); }
+}
+
+function delC(id) {
+  contas = contas.filter(c => c.id !== id);
+  salvar(); renderContas(); initApp(); toast('Conta removida');
+}
+
+function filtConta(f, el) {
+  filtContas = f;
+  document.querySelectorAll('#pg-contas .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderContas();
+}
+
+// ── ESTOQUE ───────────────────────────────────────────
+function renderEst() {
+  const busca = (document.getElementById('est-busca')?.value || '').toLowerCase();
+  const lista = produtos.filter(p => {
+    if (busca && !p.nome.toLowerCase().includes(busca) && !(p.cod||'').toLowerCase().includes(busca)) return false;
+    const st = estSt(p);
+    return estFiltAtivo === 'todos' || st === estFiltAtivo;
+  });
+  document.getElementById('est-tot').textContent   = produtos.length;
+  document.getElementById('est-baixo').textContent  = produtos.filter(p => estSt(p) === 'baixo').length;
+  document.getElementById('est-esgt').textContent   = produtos.filter(p => estSt(p) === 'esgotado').length;
+
+  const el = document.getElementById('est-lista');
+  if (!lista.length) { el.innerHTML = '<div class="empty"><div class="ico">📦</div><p>Nenhum produto</p></div>'; return; }
+  const lbl = { ok:'✅ Em estoque', baixo:'⚠️ Baixo', esgotado:'🚫 Esgotado', vencido:'📅 Vencido' };
+  const chp = { ok:'chip-g', baixo:'chip-y', esgotado:'chip-r', vencido:'chip-b' };
+  el.innerHTML = lista.map(p => {
+    const st = estSt(p);
+    return `<div class="estc ${st}">
+      <div class="qtd-b ${st}"><div class="n">${p.qtd}</div><div class="l">un</div></div>
+      <div style="flex:1">
+        <div class="est-nome">${p.nome}</div>
+        <div class="est-meta">Cód: ${p.cod||'—'} · ${fmt(p.preco)}${p.venc ? ' · Val: '+fmtD(p.venc) : ''}</div>
+        <span class="chip ${chp[st]}" style="font-size:.65rem;margin-top:4px;display:inline-flex">${lbl[st]}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <button class="btn-rep" onclick="estRepor(${p.id})">+ Repor</button>
+        <div class="acts">
+          <button class="btn btn-sm btn-b" onclick="estEditar(${p.id})">✏️</button>
+          <button class="btn btn-sm btn-r" onclick="estDel(${p.id})">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function estSalvar() {
+  const nome  = document.getElementById('est-nome').value.trim();
+  const preco = parseFloat(document.getElementById('est-preco').value);
+  if (!nome || isNaN(preco)) { toast('Informe nome e preço'); return; }
+  const obj = { nome, cod: document.getElementById('est-cod').value.trim(), preco,
+    qtd: parseInt(document.getElementById('est-qtd').value) || 0,
+    venc: document.getElementById('est-venc').value };
+  const eid = document.getElementById('est-eid').value;
+  if (eid) {
+    const idx = produtos.findIndex(p => p.id == eid);
+    if (idx >= 0) produtos[idx] = { ...produtos[idx], ...obj };
+    toast('✅ Produto atualizado!');
+  } else {
+    obj.id = Date.now();
+    produtos.push(obj);
+    toast('✅ Produto cadastrado!');
+  }
+  estCancelar(); salvar(); renderEst();
+}
+
+function estEditar(id) {
+  const p = produtos.find(p => p.id === id);
+  document.getElementById('est-eid').value   = p.id;
+  document.getElementById('est-nome').value  = p.nome;
+  document.getElementById('est-cod').value   = p.cod  || '';
+  document.getElementById('est-preco').value = p.preco;
+  document.getElementById('est-qtd').value   = p.qtd;
+  document.getElementById('est-venc').value  = p.venc || '';
+  document.getElementById('est-form-title').textContent = '✏️ Editando produto';
+  document.getElementById('est-bcnc').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function estCancelar() {
+  ['est-eid','est-nome','est-cod','est-preco','est-qtd','est-venc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('est-form-title').textContent = '📦 Novo Produto';
+  document.getElementById('est-bcnc').style.display = 'none';
+}
+
+function estDel(id) {
+  if (!confirm('Remover produto?')) return;
+  produtos = produtos.filter(p => p.id !== id);
+  salvar(); renderEst(); toast('Produto removido');
+}
+
+function estRepor(id) {
+  const p = produtos.find(p => p.id === id);
+  const q = parseInt(prompt(`Adicionar ao estoque de "${p.nome}"?`));
+  if (!isNaN(q) && q > 0) { p.qtd += q; salvar(); renderEst(); toast(`✅ +${q} unidades`); }
+}
+
+function estFilt(f, el) {
+  estFiltAtivo = f;
+  document.querySelectorAll('#pg-estoque .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderEst();
+}
+
+// ── PDV ───────────────────────────────────────────────
+function renderPdvSelects() { /* selects substituídos por busca dinâmica */ }
+
+function pdvBusca(q) {
+  const box = document.getElementById('pdv-sug');
+  if (!q.trim()) { box.style.display = 'none'; return; }
+  const r = q.toLowerCase();
+  const found = produtos.filter(p => p.nome.toLowerCase().includes(r) || (p.cod||'').toLowerCase().includes(r));
+  if (!found.length) {
+    box.innerHTML = `<div class="sug-new" onclick="pdvMostrarNovoProd('${q.replace(/'/g,"\\'")}')">+ Cadastrar "${q}" como novo produto</div>`;
+  } else {
+    box.innerHTML = found.map(p => {
+      const st = p.qtd === 0 ? `<span style="color:var(--red);font-size:.7rem;font-weight:800">Esgotado</span>`
+               : p.qtd <= appConfig.estoqueMin ? `<span style="color:var(--yellow);font-size:.7rem;font-weight:800">${p.qtd} un</span>`
+               : `<span style="color:var(--green);font-size:.7rem;font-weight:800">${p.qtd} un</span>`;
+      return `<div class="sug-item" onclick="pdvSelProd(${p.id})">
+        <div><div class="sn">${p.nome}</div><div class="si">Cód: ${p.cod||'—'} · ${fmt(p.preco)}</div></div>${st}
+      </div>`;
+    }).join('') + `<div class="sug-new" onclick="pdvMostrarNovoProd('')">+ Cadastrar novo produto</div>`;
+  }
+  box.style.display = 'block';
+}
+
+function pdvSelProd(id) {
+  pdvProd = produtos.find(p => p.id === id);
+  document.getElementById('pdv-busca').value = pdvProd.nome;
+  document.getElementById('pdv-sug').style.display = 'none';
+  document.getElementById('pdv-pnome').textContent = pdvProd.nome;
+  document.getElementById('pdv-pinfo').textContent = `${fmt(pdvProd.preco)} · ${pdvProd.qtd} em estoque`;
+  document.getElementById('pdv-psel').style.display = 'block';
+  document.getElementById('pdv-qtd').value = 1;
+}
+
+function pdvMostrarNovoProd(nome) {
+  document.getElementById('pdv-sug').style.display = 'none';
+  document.getElementById('np-nome').value = nome;
+  document.getElementById('pdv-nprod').style.display = 'block';
+  document.getElementById('np-preco').focus();
+}
+
+function pdvCadProd() {
+  const nome  = document.getElementById('np-nome').value.trim();
+  const preco = parseFloat(document.getElementById('np-preco').value);
+  const qtd   = parseInt(document.getElementById('np-qtd').value) || 0;
+  const cod   = document.getElementById('np-cod').value.trim();
+  if (!nome || isNaN(preco)) { toast('Informe nome e preço'); return; }
+  const novo = { id: Date.now(), nome, cod, preco, qtd, venc: '' };
+  produtos.push(novo);
+  document.getElementById('pdv-nprod').style.display = 'none';
+  pdvSelProd(novo.id);
+  salvar(); renderEst();
+  toast('✅ Produto cadastrado!');
+}
+
+function pdvLimpProd() {
+  pdvProd = null;
+  document.getElementById('pdv-psel').style.display = 'none';
+  document.getElementById('pdv-busca').value = '';
+}
+
+function pdvQtd(d) {
+  const el = document.getElementById('pdv-qtd');
+  el.value = Math.max(1, (parseInt(el.value) || 1) + d);
+}
+
+function pdvAdd() {
+  if (!pdvProd) return;
+  const q = parseInt(document.getElementById('pdv-qtd').value) || 1;
+  if (q > pdvProd.qtd) { toast('Sem estoque suficiente!'); return; }
+  const exist = carrinho.find(i => i.id === pdvProd.id);
+  if (exist) { exist.qtd += q; exist.sub = exist.qtd * exist.preco; }
+  else { carrinho.push({ id: pdvProd.id, nome: pdvProd.nome, qtd: q, preco: pdvProd.preco, sub: q * pdvProd.preco }); }
+  pdvLimpProd();
+  renderCarrinho();
+  document.getElementById('pdv-pgto').style.display = 'block';
+  toast('✅ Adicionado');
+}
+
+function renderCarrinho() {
+  const cl = document.getElementById('pdv-clista');
+  const cv = document.getElementById('pdv-cvazio');
+  const ct = document.getElementById('pdv-ctot');
+  if (!carrinho.length) { cl.innerHTML = ''; cv.style.display = 'block'; ct.style.display = 'none'; return; }
+  cv.style.display = 'none'; ct.style.display = 'block';
+  let tot = 0;
+  cl.innerHTML = carrinho.map((it, i) => {
+    tot += it.sub;
+    return `<div class="ci">
+      <div><div class="cn">${it.nome}</div><div class="cm">${it.qtd}x · ${fmt(it.preco)}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-weight:800">${fmt(it.sub)}</span>
+        <button onclick="rmCarrinho(${i})" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1rem">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('pdv-tval').textContent = fmt(tot);
+}
+
+function rmCarrinho(i) {
+  carrinho.splice(i, 1);
+  renderCarrinho();
+  if (!carrinho.length) document.getElementById('pdv-pgto').style.display = 'none';
+}
+
+function pdvPgto(tipo, el) {
+  pdvTipo = tipo;
+  document.querySelectorAll('.pgto-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pdv-troco').style.display = tipo === 'dinheiro' ? 'block' : 'none';
+  document.getElementById('pdv-fiado').style.display = tipo === 'fiado'    ? 'block' : 'none';
+}
+
+function calcTroco() {
+  const receb = parseFloat(document.getElementById('pdv-receb').value) || 0;
+  const tot   = carrinho.reduce((a, i) => a + i.sub, 0);
+  document.getElementById('pdv-trocoVal').textContent = fmt(Math.max(0, receb - tot));
+}
+
+// Busca de clientes no PDV
+function pdvBuscaCli(q) {
+  const box = document.getElementById('pdv-clisug');
+  if (!q.trim()) { box.style.display = 'none'; return; }
+  const r = q.toLowerCase();
+  const found = clientes.filter(c => c.nome.toLowerCase().includes(r));
+  if (!found.length) {
+    box.innerHTML = `<div class="sug-new" onclick="pdvMostrarNovoCli('${q.replace(/'/g,"\\'")}')">+ Cadastrar "${q}"</div>`;
+  } else {
+    box.innerHTML = found.map(c =>
+      `<div class="sug-item" onclick="pdvSelCli(${c.id})"><div class="sn">${c.nome}</div><div class="si">${c.tel}</div></div>`
+    ).join('') + `<div class="sug-new" onclick="pdvMostrarNovoCli('')">+ Cadastrar novo cliente</div>`;
+  }
+  box.style.display = 'block';
+}
+
+function pdvSelCli(id) {
+  pdvCli = clientes.find(c => c.id === id);
+  document.getElementById('pdv-clibusca').value = pdvCli.nome;
+  document.getElementById('pdv-clisug').style.display = 'none';
+  document.getElementById('pdv-csnome').textContent = pdvCli.nome;
+  document.getElementById('pdv-cstel').textContent  = pdvCli.tel;
+  document.getElementById('pdv-clisel').style.display = 'flex';
+}
+
+function pdvMostrarNovoCli(nome) {
+  document.getElementById('pdv-clisug').style.display = 'none';
+  document.getElementById('nc-nome').value = nome;
+  document.getElementById('pdv-ncli').style.display = 'block';
+}
+
+function pdvCadCli() {
+  const nome = document.getElementById('nc-nome').value.trim();
+  const tel  = document.getElementById('nc-tel').value.trim();
+  if (!nome) { toast('Informe o nome'); return; }
+  const novo = { id: Date.now(), nome, tel: tel || '—', extrato: [] };
+  clientes.push(novo);
+  document.getElementById('pdv-ncli').style.display = 'none';
+  pdvSelCli(novo.id);
+  salvar(); renderCli();
+  toast('✅ Cliente cadastrado!');
+}
+
+function pdvLimpCli() {
+  pdvCli = null;
+  document.getElementById('pdv-clibusca').value = '';
+  document.getElementById('pdv-clisel').style.display = 'none';
+}
+
+function pdvFinalizar() {
+  if (!carrinho.length) return;
+  if (pdvTipo === 'fiado' && !pdvCli) { toast('Selecione um cliente para fiado'); return; }
+  const tot = carrinho.reduce((a, i) => a + i.sub, 0);
+  let itensHTML = '';
+  carrinho.forEach(it => {
+    const p = produtos.find(p => p.id === it.id);
+    if (p) p.qtd -= it.qtd;
+    itensHTML += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>${it.qtd}x ${it.nome}</span><span>${fmt(it.sub)}</span></div>`;
+  });
+  if (pdvTipo === 'fiado' && pdvCli) {
+    const data = new Date().toISOString().split('T')[0];
+    const itStr = carrinho.map(i => `${i.qtd}x ${i.nome}`).join(', ');
+    pdvCli.extrato.push({ tipo: 'fiado', desc: itStr, valor: tot, data });
+  }
+  // Recibo
+  document.getElementById('rec-loja').textContent  = appConfig.nome;
+  document.getElementById('rec-tel').textContent   = appConfig.tel || '';
+  document.getElementById('rec-cli').textContent   = pdvCli ? pdvCli.nome : 'Consumidor Final';
+  document.getElementById('rec-data').textContent  = new Date().toLocaleString('pt-BR');
+  document.getElementById('rec-itens').innerHTML   = itensHTML;
+  document.getElementById('rec-tot').textContent   = fmt(tot);
+  const pgtoStr = { dinheiro:'💵 Dinheiro', pix:'📲 PIX', cartao:'💳 Cartão', fiado:'📋 Fiado' };
+  document.getElementById('rec-pgto').textContent  = pgtoStr[pdvTipo] || '';
+  const receb = parseFloat(document.getElementById('pdv-receb').value) || 0;
+  const troco = receb - tot;
+  const recTr = document.getElementById('rec-troco');
+  if (pdvTipo === 'dinheiro' && troco > 0) {
+    recTr.textContent = 'Troco: ' + fmt(troco); recTr.style.display = 'block';
+  } else { recTr.style.display = 'none'; }
+
+  salvar();
+  document.getElementById('pdv-pgto').style.display = 'none';
+  document.getElementById('pdv-rec').style.display  = 'block';
+  carrinho = []; pdvProd = null; pdvCli = null; pdvTipo = 'dinheiro';
+  renderCarrinho();
+}
+
+function pdvNova() {
+  document.getElementById('pdv-rec').style.display = 'none';
+  document.getElementById('pdv-receb').value = '';
+  document.getElementById('pdv-trocoVal').textContent = 'R$ 0,00';
+  document.querySelectorAll('.pgto-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+  pdvLimpCli();
+}
+
+// ── CONFIG ────────────────────────────────────────────
+function renderCfg() {
+  document.getElementById('cfg-nome').value    = appConfig.nome || '';
+  document.getElementById('cfg-tel').value     = appConfig.tel  || '';
+  document.getElementById('cfg-end').value     = appConfig.end  || '';
+  document.getElementById('cfg-estmin').value  = appConfig.estoqueMin || 2;
+  document.getElementById('cfg-fb-status').innerHTML =
+    `<span style="color:var(--green);font-weight:800">🟢 Conectado ao Firebase</span><br>
+     <span style="font-size:.78rem;color:#555">Banco: bellagestao-a53b7 · Caminho: /perfumaria</span>`;
+}
+
+function cfgSalvar() {
+  appConfig.nome = document.getElementById('cfg-nome').value.trim() || 'NilSyste';
+  appConfig.tel  = document.getElementById('cfg-tel').value.trim();
+  appConfig.end  = document.getElementById('cfg-end').value.trim();
+  salvar(); initApp(); toast('✅ Configurações salvas!');
+}
+
+function cfgSalvarEst() {
+  appConfig.estoqueMin = parseInt(document.getElementById('cfg-estmin').value) || 2;
+  salvar(); toast('✅ Alerta atualizado!');
+}
+
+function exportar() {
+  const blob = new Blob([JSON.stringify({ produtos, clientes, contas, appConfig }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'backup_perfumaria.json'; a.click();
+}
+
+function importar(e) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (d.produtos) produtos   = d.produtos;
+      if (d.clientes) clientes   = d.clientes;
+      if (d.contas)   contas     = d.contas;
+      if (d.appConfig) appConfig = Object.assign({}, appConfig, d.appConfig);
+      salvar(); initApp(); renderCli(); renderContas(); renderEst(); renderCfg();
+      toast('✅ Backup restaurado!');
+    } catch { toast('❌ Arquivo inválido'); }
+  };
+  reader.readAsText(e.target.files[0]);
+}
+
+function resetar() {
+  if (!confirm('Apagar TODOS os dados permanentemente?')) return;
+  dbRef.remove(); location.reload();
+}
+
+// ── DEVEDORES ─────────────────────────────────────────
+function renderDevedores() {
+  const busca = (document.getElementById('dv-busca')?.value || '').toLowerCase();
+  const devs = clientes.filter(c => saldoCli(c) > 0 && (!busca || c.nome.toLowerCase().includes(busca)));
+  const totalGeral = devs.reduce((a, c) => a + saldoCli(c), 0);
+
+  document.getElementById('dv-total').textContent = fmt(totalGeral);
+  document.getElementById('dv-sub').textContent   = devs.length + ' devedor' + (devs.length !== 1 ? 'es' : '');
+  document.getElementById('badge-dv').textContent = devs.length;
+
+  const el = document.getElementById('lista-dv');
+  if (!devs.length) {
+    el.innerHTML = '<div class="empty"><div class="ico">🎉</div><p>Nenhum devedor no momento</p></div>';
+    return;
+  }
+
+  const sorted = [...devs].sort((a, b) => saldoCli(b) - saldoCli(a));
+  el.innerHTML = sorted.map(c => {
+    const saldo = saldoCli(c);
+    const ultLanc = c.extrato.length ? c.extrato[c.extrato.length - 1] : null;
+    const prazoVenc = c.extrato.filter(e => e.tipo === 'fiado' && e.prazo).map(e => e.prazo).sort().pop();
+    const stPrazo = prazoVenc ? (new Date(prazoVenc + 'T00:00:00') < hoje() ? 'chip-r' : 'chip-y') : '';
+    return `<div class="clc" style="cursor:pointer" onclick="dvAbrirHistorico(${c.id})">
+      <div class="av">${c.nome[0]}</div>
+      <div class="cl-info">
+        <div class="nome">${c.nome}</div>
+        <div class="tel">${c.tel}${prazoVenc ? ' · <span class="chip '+stPrazo+'" style="font-size:.65rem">Prazo: '+fmtD(prazoVenc)+'</span>' : ''}</div>
+        ${ultLanc ? `<div style="font-size:.7rem;color:var(--txm);margin-top:2px">Último: ${fmtD(ultLanc.data)} — ${ultLanc.desc}</div>` : ''}
+      </div>
+      <div class="cl-div">
+        <label>Dívida</label>
+        <div class="val vr">${fmt(saldo)}</div>
+      </div>
+      <span style="color:var(--txm);margin-left:8px;font-size:1.1rem">›</span>
+    </div>`;
+  }).join('');
+}
+
+let dvCliAtivo = null;
+
+function dvAbrirHistorico(id) {
+  dvCliAtivo = clientes.find(c => c.id === id);
+  const saldo = saldoCli(dvCliAtivo);
+
+  document.getElementById('dv-nome-modal').textContent  = dvCliAtivo.nome;
+  document.getElementById('dv-saldo-val').textContent   = fmt(saldo);
+  document.getElementById('dv-total-modal').textContent = fmt(saldo);
+  document.getElementById('dv-ph-loja').textContent     = appConfig.nome;
+  document.getElementById('dv-ph-data').textContent     = 'Gerado em ' + new Date().toLocaleString('pt-BR');
+
+  const totalFiado = dvCliAtivo.extrato.filter(e => e.tipo === 'fiado').reduce((a, e) => a + e.valor, 0);
+  const totalPago  = dvCliAtivo.extrato.filter(e => e.tipo === 'pagamento').reduce((a, e) => a + e.valor, 0);
+  document.getElementById('dv-saldo-info').textContent  = `Total fiado: ${fmt(totalFiado)} · Pago: ${fmt(totalPago)}`;
+
+  const lista = document.getElementById('dv-hist-lista');
+  if (!dvCliAtivo.extrato.length) {
+    lista.innerHTML = '<div class="empty" style="padding:20px"><div class="ico">📄</div><p>Sem lançamentos</p></div>';
+  } else {
+    lista.innerHTML = [...dvCliAtivo.extrato].reverse().map(e => {
+      const f = e.tipo === 'fiado';
+      return `<div class="ei">
+        <div>
+          <div class="ei-lbl">${f ? '🛒' : '💵'} ${e.desc}</div>
+          <div class="ei-dt">${fmtD(e.data)}${e.prazo ? ' · Prazo: ' + fmtD(e.prazo) : ''}</div>
+        </div>
+        <div class="ei-val ${f ? 'vr' : 'vg'}">${f ? '+' : '-'} ${fmt(e.valor)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('mo-dv').classList.add('open');
+}
+
+function dvImprimir() {
+  if (!dvCliAtivo) return;
+  const saldo      = saldoCli(dvCliAtivo);
+  const totalFiado = dvCliAtivo.extrato.filter(e => e.tipo === 'fiado').reduce((a, e) => a + e.valor, 0);
+  const totalPago  = dvCliAtivo.extrato.filter(e => e.tipo === 'pagamento').reduce((a, e) => a + e.valor, 0);
+
+  const linhas = [...dvCliAtivo.extrato].reverse().map(e => {
+    const f = e.tipo === 'fiado';
+    return `<tr>
+      <td>${fmtD(e.data)}</td>
+      <td>${f ? '🛒 Fiado' : '💵 Pagamento'}</td>
+      <td>${e.desc}${e.prazo ? ' <small>(prazo: ' + fmtD(e.prazo) + ')</small>' : ''}</td>
+      <td style="color:${f ? '#dc2626' : '#16a34a'};font-weight:700;text-align:right">${f ? '+' : '-'} ${fmt(e.valor)}</td>
+    </tr>`;
+  }).join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Extrato — ${dvCliAtivo.nome}</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:32px;color:#1e293b;font-size:13px}
+    h1{font-size:18px;margin:0}h2{font-size:14px;margin:4px 0 0;color:#555}
+    .header{text-align:center;margin-bottom:24px;border-bottom:2px solid #6366f1;padding-bottom:16px}
+    .info{display:flex;justify-content:space-between;margin-bottom:20px}
+    .info-box{background:#f1f5f9;border-radius:8px;padding:12px 16px;flex:1;margin:0 6px}
+    .info-box:first-child{margin-left:0}.info-box:last-child{margin-right:0}
+    .info-box label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:4px}
+    .info-box span{font-size:16px;font-weight:800}
+    .saldo span{color:#dc2626}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th{text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;padding:8px;border-bottom:2px solid #e2e8f0}
+    td{padding:10px 8px;border-bottom:1px solid #f1f5f9;font-size:12px}
+    tr:hover td{background:#f8fafc}
+    .footer{margin-top:24px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px}
+    @media print{body{margin:16px}}
+  </style></head><body>
+  <div class="header">
+    <h1>${appConfig.nome}</h1>
+    <h2>Relatório de Débitos — ${dvCliAtivo.nome}</h2>
+    <div style="font-size:11px;color:#888;margin-top:4px">Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+  </div>
+  <div class="info">
+    <div class="info-box"><label>Total Fiado</label><span style="color:#dc2626">${fmt(totalFiado)}</span></div>
+    <div class="info-box"><label>Total Pago</label><span style="color:#16a34a">${fmt(totalPago)}</span></div>
+    <div class="info-box saldo"><label>Saldo Devedor</label><span>${fmt(saldo)}</span></div>
+  </div>
+  <table>
+    <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead>
+    <tbody>${linhas || '<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:20px">Sem lançamentos</td></tr>'}</tbody>
+  </table>
+  <div class="footer">${appConfig.nome} · ${appConfig.tel || ''}</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+// ── MODAL ─────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.mo').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+</script>
+</body>
+</html>
