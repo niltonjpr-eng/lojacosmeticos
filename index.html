@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 :root{--bg:#f1f5f9;--sb:#1e293b;--sbt:#94a3b8;--pr:#6366f1;--prd:#4f46e5;--ac:#818cf8;--card:#ffffff;--tx:#1e293b;--txm:#64748b;--brd:#e2e8f0;--green:#16a34a;--yellow:#ca8a04;--red:#dc2626;--blue:#2563eb;--r:16px;--sh:0 2px 12px rgba(0,0,0,.06)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -189,7 +190,40 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
 @media(max-width:700px){.sb{display:none}.main{margin-left:0;padding:16px 12px 90px;padding-top:72px}.bnav{display:flex}.mhdr{display:block}.ir{flex-direction:column}.banner h1{font-size:1.5rem}.tbl{display:none}.sm{display:block !important}}
 .sm{display:none}
 
-/* PRINT */
+/* CAMERA MODAL */
+#mo-camera .md{max-width:420px}
+#camera-reader{width:100%;border-radius:12px;overflow:hidden;background:#000;min-height:260px}
+#camera-reader video{border-radius:12px}
+.cam-status{text-align:center;font-size:.82rem;color:var(--txm);margin-top:10px;font-weight:700}
+
+/* PDV MELHORADO */
+.pdv-search-wrap{position:relative;display:flex;gap:8px;margin-bottom:10px}
+.pdv-search-wrap input{flex:1;padding:13px 16px;border:2px solid var(--brd);border-radius:12px;font-family:inherit;font-size:.95rem;color:var(--tx);background:#fff;outline:none;transition:border .15s}
+.pdv-search-wrap input:focus{border-color:var(--pr)}
+.btn-cam{padding:13px 16px;background:var(--sb);color:#fff;border:none;border-radius:12px;font-size:1.1rem;cursor:pointer;transition:background .15s;flex-shrink:0}
+.btn-cam:hover{background:var(--prd)}
+.pdv-prod-card{background:linear-gradient(135deg,#f0eeff,#fdf5fb);border:1.5px solid #d8d4f8;border-radius:14px;padding:14px;margin-bottom:10px}
+.pdv-prod-nome{font-weight:800;font-size:1rem;color:var(--tx)}
+.pdv-prod-info{font-size:.78rem;color:var(--txm);margin-top:3px}
+.pdv-qtd-row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.qtd-btn{width:38px;height:38px;border-radius:50%;border:2px solid var(--pr);background:#fff;color:var(--pr);font-size:1.2rem;cursor:pointer;font-weight:800;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.qtd-btn:hover{background:var(--pr);color:#fff}
+#pdv-qtd{width:64px;text-align:center;padding:8px;border:2px solid var(--brd);border-radius:10px;font-size:1rem;font-family:inherit;font-weight:800}
+.cart-item{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--brd)}
+.cart-item:last-child{border-bottom:none}
+.cart-nome{font-size:.9rem;font-weight:800}
+.cart-meta{font-size:.72rem;color:var(--txm);margin-top:2px}
+.cart-sub{font-size:.95rem;font-weight:800;color:var(--pr)}
+.cart-rm{background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.1rem;padding:4px;border-radius:6px;transition:all .15s}
+.cart-rm:hover{background:#fdecea;color:var(--red)}
+.pdv-total-bar{background:linear-gradient(135deg,var(--pr),var(--prd));border-radius:12px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.pdv-total-bar span{color:#fff;font-size:.8rem;font-weight:700;opacity:.85}
+.pdv-total-bar strong{color:#fff;font-size:1.5rem;font-weight:800}
+.pgto-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.pgto-btn2{padding:14px 8px;border-radius:12px;border:2px solid var(--brd);background:#fff;color:var(--txm);font-family:inherit;font-size:.85rem;font-weight:800;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.pgto-btn2 .pi{font-size:1.4rem}
+.pgto-btn2:hover{border-color:var(--pr);color:var(--pr)}
+.pgto-btn2.active{background:var(--pr);color:#fff;border-color:var(--pr)}
 @media print{
   body *{visibility:hidden}
   #dv-print-area,#dv-print-area *{visibility:visible}
@@ -312,30 +346,39 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
 
 <!-- PAGE: PDV -->
 <div class="page" id="pg-pdv">
+
+  <!-- BUSCA COM CÂMERA -->
   <div class="card" style="margin-bottom:12px">
     <div class="card-title">🛒 Novo Atendimento</div>
-    <div style="position:relative;margin-bottom:10px">
-      <input type="text" id="pdv-busca" placeholder="🔍 Nome ou código do produto..." autocomplete="off" oninput="pdvBusca(this.value)"
-        style="padding:12px 14px;border:1.5px solid var(--brd);border-radius:10px;width:100%;font-family:inherit;font-size:.92rem;outline:none">
+    <div class="pdv-search-wrap">
+      <input type="text" id="pdv-busca" placeholder="🔍 Nome ou código do produto..." autocomplete="off" oninput="pdvBusca(this.value)">
+      <button class="btn-cam" onclick="abrirCamera()" title="Escanear código de barras">📷</button>
       <div id="pdv-sug" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:#fff;border:1.5px solid var(--brd);border-radius:0 0 12px 12px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.1)"></div>
     </div>
-    <div id="pdv-psel" style="display:none;background:#f7f0f5;border-radius:12px;padding:14px;margin-bottom:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div><div id="pdv-pnome" style="font-weight:800;font-size:.95rem"></div><div id="pdv-pinfo" style="font-size:.75rem;color:var(--txm);margin-top:2px"></div></div>
-        <button onclick="pdvLimpProd()" style="background:none;border:none;color:var(--txm);font-size:1.1rem;cursor:pointer">✕</button>
+
+    <!-- Produto selecionado -->
+    <div id="pdv-psel" style="display:none" class="pdv-prod-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <div class="pdv-prod-nome" id="pdv-pnome"></div>
+          <div class="pdv-prod-info" id="pdv-pinfo"></div>
+        </div>
+        <button onclick="pdvLimpProd()" style="background:none;border:none;color:var(--txm);font-size:1.1rem;cursor:pointer;padding:2px 6px">✕</button>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
-        <button onclick="pdvQtd(-1)" style="width:36px;height:36px;border-radius:50%;border:1.5px solid var(--brd);background:#fff;font-size:1.1rem;cursor:pointer;font-weight:800">−</button>
-        <input type="number" id="pdv-qtd" value="1" min="1" style="width:60px;text-align:center;padding:8px;border:1.5px solid var(--brd);border-radius:8px;font-size:1rem;font-family:inherit">
-        <button onclick="pdvQtd(1)" style="width:36px;height:36px;border-radius:50%;border:1.5px solid var(--brd);background:#fff;font-size:1.1rem;cursor:pointer;font-weight:800">+</button>
-        <button class="btn btn-p" style="flex:1;margin:0" onclick="pdvAdd()">+ Adicionar</button>
+      <div class="pdv-qtd-row">
+        <button class="qtd-btn" onclick="pdvQtd(-1)">−</button>
+        <input type="number" id="pdv-qtd" value="1" min="1">
+        <button class="qtd-btn" onclick="pdvQtd(1)">+</button>
+        <button class="btn btn-p" style="flex:1;margin:0;border-radius:12px" onclick="pdvAdd()">+ Adicionar ao carrinho</button>
       </div>
     </div>
+
+    <!-- Produto não encontrado -->
     <div id="pdv-nprod" style="display:none;background:#fff8e1;border:1.5px solid #f8d86a;border-radius:12px;padding:14px;margin-bottom:10px">
       <div style="font-size:.8rem;font-weight:800;color:#856404;margin-bottom:10px">📦 Produto não encontrado — cadastrar agora</div>
       <div class="ir" style="gap:8px">
         <input type="text" id="np-nome" placeholder="Nome" style="flex:2">
-        <input type="text" id="np-cod" placeholder="Código">
+        <div style="display:flex;gap:6px;flex:1;min-width:100px"><input type="text" id="np-cod" placeholder="Código" style="flex:1"><button type="button" class="btn-cam" style="padding:8px 11px;font-size:.95rem;border-radius:8px" onclick="abrirCamera('np-cod')" title="Escanear">📷</button></div>
         <input type="number" id="np-preco" placeholder="Preço R$">
         <input type="number" id="np-qtd" placeholder="Qtd estoque">
       </div>
@@ -346,36 +389,39 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
     </div>
   </div>
 
+  <!-- CARRINHO -->
   <div class="card" style="margin-bottom:12px">
-    <div id="pdv-cvazio" class="empty" style="padding:24px"><div class="ico">🛍️</div><p>Carrinho vazio</p></div>
+    <div class="card-title">🛍️ Carrinho</div>
+    <div id="pdv-cvazio" class="empty" style="padding:20px"><div class="ico">🛍️</div><p>Carrinho vazio</p></div>
     <div id="pdv-clista"></div>
-    <div id="pdv-ctot" style="display:none;border-top:2px solid var(--brd);margin-top:10px;padding-top:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="font-weight:800;font-size:.9rem;color:var(--txm)">TOTAL</span>
-        <span id="pdv-tval" style="font-size:1.4rem;font-weight:800;color:var(--pr)">R$ 0,00</span>
+    <div id="pdv-ctot" style="display:none">
+      <div class="pdv-total-bar">
+        <span>TOTAL DA VENDA</span>
+        <strong id="pdv-tval">R$ 0,00</strong>
       </div>
     </div>
   </div>
 
+  <!-- PAGAMENTO -->
   <div class="card" id="pdv-pgto" style="display:none;margin-bottom:16px">
     <div class="card-title">💳 Forma de Pagamento</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-      <button class="pgto-btn active" onclick="pdvPgto('dinheiro',this)">💵 Dinheiro</button>
-      <button class="pgto-btn" onclick="pdvPgto('pix',this)">📲 PIX</button>
-      <button class="pgto-btn" onclick="pdvPgto('cartao',this)">💳 Cartão</button>
-      <button class="pgto-btn" onclick="pdvPgto('fiado',this)">📋 Fiado</button>
+    <div class="pgto-grid">
+      <button class="pgto-btn2 active" onclick="pdvPgto('dinheiro',this)"><span class="pi">💵</span>Dinheiro</button>
+      <button class="pgto-btn2" onclick="pdvPgto('pix',this)"><span class="pi">📲</span>PIX</button>
+      <button class="pgto-btn2" onclick="pdvPgto('cartao',this)"><span class="pi">💳</span>Cartão</button>
+      <button class="pgto-btn2" onclick="pdvPgto('fiado',this)"><span class="pi">📋</span>Fiado</button>
     </div>
-    <div id="pdv-troco" style="background:#f0fff4;border-radius:10px;padding:12px;margin-bottom:12px">
-      <div class="fg" style="margin-bottom:6px"><label>Valor recebido R$</label>
+    <div id="pdv-troco" style="background:#f0fff4;border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="fg" style="margin-bottom:8px"><label>Valor recebido R$</label>
         <input type="number" id="pdv-receb" placeholder="0,00" oninput="calcTroco()">
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;font-weight:800">
-        <span style="color:var(--txm);font-size:.85rem">TROCO</span>
-        <span id="pdv-trocoVal" style="font-size:1.1rem;color:var(--green)">R$ 0,00</span>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:.85rem;font-weight:700;color:var(--txm)">TROCO</span>
+        <span id="pdv-trocoVal" style="font-size:1.2rem;font-weight:800;color:var(--green)">R$ 0,00</span>
       </div>
     </div>
-    <div id="pdv-fiado" style="display:none;background:#fdf5fb;border-radius:10px;padding:12px;margin-bottom:12px">
-      <div style="font-size:.78rem;font-weight:800;color:var(--txm);margin-bottom:8px">Vincular ao cliente</div>
+    <div id="pdv-fiado" style="display:none;background:#fdf5fb;border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:.78rem;font-weight:800;color:var(--txm);margin-bottom:8px">👤 Vincular ao cliente</div>
       <div style="position:relative">
         <input type="text" id="pdv-clibusca" placeholder="🔍 Nome do cliente..." oninput="pdvBuscaCli(this.value)" autocomplete="off"
           style="padding:11px 14px;border:1.5px solid var(--brd);border-radius:10px;width:100%;font-family:inherit;font-size:.88rem;outline:none">
@@ -394,29 +440,57 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
         <button class="btn btn-sm btn-g" style="width:100%;margin-top:8px" onclick="pdvCadCli()">✅ Salvar e vincular</button>
       </div>
     </div>
-    <button class="btn btn-p" style="font-size:1rem" onclick="pdvFinalizar()">✅ FECHAR VENDA</button>
+    <button class="btn btn-p" style="font-size:1rem;border-radius:12px;padding:14px" onclick="pdvFinalizar()">✅ FECHAR VENDA</button>
   </div>
 
+  <!-- RECIBO -->
   <div id="pdv-rec" style="display:none">
-    <div class="card" style="border:2px dashed var(--pr);text-align:center;padding:20px">
-      <div style="font-size:1.1rem;font-weight:800;color:var(--pr)" id="rec-loja"></div>
-      <div style="font-size:.75rem;color:var(--txm)" id="rec-tel"></div>
-      <div style="border-top:1px dashed var(--brd);border-bottom:1px dashed var(--brd);margin:12px 0;padding:10px 0;text-align:left">
-        <div style="font-size:.75rem;margin-bottom:4px"><b>CLIENTE:</b> <span id="rec-cli"></span></div>
-        <div style="font-size:.75rem;margin-bottom:8px"><b>DATA:</b> <span id="rec-data"></span></div>
-        <div id="rec-itens" style="font-size:.82rem"></div>
+    <div id="recibo-print" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1)">
+      <!-- Cabeçalho da loja -->
+      <div style="background:linear-gradient(135deg,var(--pr),var(--prd));padding:22px 20px 18px;text-align:center">
+        <div id="rec-loja" style="font-size:1.25rem;font-weight:800;color:#fff;letter-spacing:.5px"></div>
+        <div id="rec-tel" style="font-size:.8rem;color:rgba(255,255,255,.8);margin-top:4px"></div>
+        <div style="margin-top:10px;font-size:.65rem;font-weight:800;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1.5px">Comprovante de Venda</div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-        <span style="font-size:.85rem;font-weight:700">TOTAL</span>
-        <span id="rec-tot" style="font-size:1.2rem;font-weight:800;color:var(--pr)"></span>
+
+      <!-- Infos da venda -->
+      <div style="padding:16px 20px 0">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--brd)">
+          <span style="font-size:.72rem;font-weight:700;color:var(--txm);text-transform:uppercase">Cliente</span>
+          <span id="rec-cli" style="font-size:.82rem;font-weight:800;color:var(--tx)"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--brd)">
+          <span style="font-size:.72rem;font-weight:700;color:var(--txm);text-transform:uppercase">Data</span>
+          <span id="rec-data" style="font-size:.82rem;font-weight:700;color:var(--tx)"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--brd)">
+          <span style="font-size:.72rem;font-weight:700;color:var(--txm);text-transform:uppercase">Pagamento</span>
+          <span id="rec-pgto" style="font-size:.82rem;font-weight:700;color:var(--tx)"></span>
+        </div>
       </div>
-      <div id="rec-pgto" style="font-size:.78rem;color:var(--txm);margin-bottom:4px"></div>
-      <div id="rec-troco" style="display:none;font-size:.78rem;font-weight:800;color:var(--green)"></div>
-      <div style="margin-top:14px;font-size:.75rem;color:var(--txm)">Obrigado pela preferência! ✨</div>
+
+      <!-- Itens -->
+      <div style="padding:14px 20px 0">
+        <div style="font-size:.68rem;font-weight:800;color:var(--txm);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Itens</div>
+        <div id="rec-itens" style="border-top:1.5px dashed var(--brd);padding-top:8px"></div>
+      </div>
+
+      <!-- Total -->
+      <div style="margin:0 20px;border-top:2px solid var(--brd);padding:14px 0 4px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:.78rem;font-weight:800;color:var(--txm);text-transform:uppercase;letter-spacing:.5px">Total</span>
+        <span id="rec-tot" style="font-size:1.4rem;font-weight:800;color:var(--pr)"></span>
+      </div>
+      <div id="rec-troco" style="display:none;margin:0 20px 4px;text-align:right;font-size:.82rem;font-weight:800;color:var(--green)"></div>
+
+      <!-- Agradecimento -->
+      <div style="padding:14px 20px 20px;text-align:center;font-size:.78rem;color:var(--txm);font-style:italic">
+        Obrigado pela preferência! ✨
+      </div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="btn btn-p" style="flex:1" onclick="window.print()">🖨️ Imprimir</button>
-      <button class="btn btn-ol" style="flex:1" onclick="pdvNova()">+ Nova Venda</button>
+
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-p" style="flex:1;border-radius:12px" onclick="imprimirRecibo()">🖨️ Imprimir</button>
+      <button class="btn btn-ol" style="flex:1;border-radius:12px" onclick="pdvNova()">+ Nova Venda</button>
     </div>
   </div>
 </div>
@@ -433,7 +507,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
     <input type="hidden" id="est-eid">
     <div class="fg"><label>Nome do produto</label><input type="text" id="est-nome" placeholder="Ex: Perfume La Vie Est Belle"></div>
     <div class="ir">
-      <div style="flex:1"><div class="fg"><label>Código</label><input type="text" id="est-cod" placeholder="001"></div></div>
+      <div style="flex:1"><div class="fg"><label>Código</label><div style="display:flex;gap:6px"><input type="text" id="est-cod" placeholder="001" style="flex:1"><button type="button" class="btn-cam" style="padding:10px 13px;font-size:1rem" onclick="abrirCamera('est-cod')" title="Escanear código">📷</button></div></div></div>
       <div style="flex:1"><div class="fg"><label>Preço R$</label><input type="number" id="est-preco" placeholder="0,00"></div></div>
     </div>
     <div class="ir">
@@ -449,11 +523,14 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
     <input type="text" id="est-busca" placeholder="🔍 Buscar produto..." oninput="renderEst()"
       style="padding:11px 14px;border:1.5px solid var(--brd);border-radius:10px;width:100%;font-family:inherit;font-size:.88rem;outline:none;background:#fff">
   </div>
-  <div class="tabs" style="margin-bottom:12px">
-    <div class="tab active" onclick="estFilt('todos',this)">Todos</div>
-    <div class="tab" onclick="estFilt('baixo',this)">⚠️ Baixo</div>
-    <div class="tab" onclick="estFilt('esgotado',this)">🚫 Esgotado</div>
-    <div class="tab" onclick="estFilt('vencido',this)">📅 Vencido</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+    <div class="tabs" style="margin:0;flex:1">
+      <div class="tab active" onclick="estFilt('todos',this)">Todos</div>
+      <div class="tab" onclick="estFilt('baixo',this)">⚠️ Baixo</div>
+      <div class="tab" onclick="estFilt('esgotado',this)">🚫 Esgotado</div>
+      <div class="tab" onclick="estFilt('vencido',this)">📅 Vencido</div>
+    </div>
+    <button class="btn btn-sm btn-dk" onclick="imprimirEstoque()" style="white-space:nowrap">🖨️ Imprimir</button>
   </div>
   <div id="est-lista"></div>
 </div>
@@ -584,6 +661,19 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
         <span id="dv-total-modal" style="font-size:1.2rem;font-weight:800;color:var(--red)"></span>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- MODAL: CÂMERA -->
+<div class="mo" id="mo-camera">
+  <div class="md" style="max-width:420px">
+    <div class="md-hdr">
+      <h3>📷 Escanear código de barras</h3>
+      <button class="md-close" onclick="fecharCamera()">✕</button>
+    </div>
+    <div id="camera-reader"></div>
+    <div class="cam-status" id="cam-status">Aponte a câmera para o código de barras</div>
+    <button class="btn btn-ol" style="width:100%;margin-top:12px" onclick="fecharCamera()">Cancelar</button>
   </div>
 </div>
 
@@ -1095,11 +1185,14 @@ function renderCarrinho() {
   let tot = 0;
   cl.innerHTML = carrinho.map((it, i) => {
     tot += it.sub;
-    return `<div class="ci">
-      <div><div class="cn">${it.nome}</div><div class="cm">${it.qtd}x · ${fmt(it.preco)}</div></div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-weight:800">${fmt(it.sub)}</span>
-        <button onclick="rmCarrinho(${i})" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1rem">✕</button>
+    return `<div class="cart-item">
+      <div style="flex:1">
+        <div class="cart-nome">${it.nome}</div>
+        <div class="cart-meta">${it.qtd}x · ${fmt(it.preco)} cada</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="cart-sub">${fmt(it.sub)}</span>
+        <button class="cart-rm" onclick="rmCarrinho(${i})">✕</button>
       </div>
     </div>`;
   }).join('');
@@ -1114,7 +1207,7 @@ function rmCarrinho(i) {
 
 function pdvPgto(tipo, el) {
   pdvTipo = tipo;
-  document.querySelectorAll('.pgto-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.pgto-btn2').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('pdv-troco').style.display = tipo === 'dinheiro' ? 'block' : 'none';
   document.getElementById('pdv-fiado').style.display = tipo === 'fiado'    ? 'block' : 'none';
@@ -1183,7 +1276,7 @@ function pdvFinalizar() {
   carrinho.forEach(it => {
     const p = produtos.find(p => p.id === it.id);
     if (p) p.qtd -= it.qtd;
-    itensHTML += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>${it.qtd}x ${it.nome}</span><span>${fmt(it.sub)}</span></div>`;
+    itensHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--brd)"><div><span style="font-size:.88rem;font-weight:700">${it.nome}</span><span style="font-size:.72rem;color:var(--txm);margin-left:6px">${it.qtd}x ${fmt(it.preco)}</span></div><span style="font-size:.9rem;font-weight:800;color:var(--tx)">${fmt(it.sub)}</span></div>`;
   });
   if (pdvTipo === 'fiado' && pdvCli) {
     const data = new Date().toISOString().split('T')[0];
@@ -1221,7 +1314,74 @@ function pdvNova() {
   pdvLimpCli();
 }
 
-// ── CONFIG ────────────────────────────────────────────
+function imprimirRecibo() {
+  const loja  = document.getElementById('rec-loja').textContent;
+  const tel   = document.getElementById('rec-tel').textContent;
+  const cli   = document.getElementById('rec-cli').textContent;
+  const data  = document.getElementById('rec-data').textContent;
+  const pgto  = document.getElementById('rec-pgto').textContent;
+  const itens = document.getElementById('rec-itens').innerHTML;
+  const tot   = document.getElementById('rec-tot').textContent;
+  const trocoEl = document.getElementById('rec-troco');
+  const troco = trocoEl.style.display !== 'none' ? trocoEl.textContent : '';
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Recibo — ${loja}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    @page{margin:0}
+    body{font-family:Arial,sans-serif;background:#fff;width:100%;min-height:100vh}
+    .recibo{width:100%;border:none;border-radius:0;overflow:hidden}
+    .cabecalho{background:#6366f1;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:28px 24px 22px;text-align:center}
+    .cabecalho h1{color:#fff;font-size:1.4rem;font-weight:800;letter-spacing:.5px}
+    .cabecalho p{color:rgba(255,255,255,.85);font-size:.9rem;margin-top:5px}
+    .cabecalho small{color:rgba(255,255,255,.55);font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;display:block;margin-top:10px}
+    .infos{padding:14px 24px 0}
+    .info-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f1f5f9}
+    .info-row span:first-child{font-size:.75rem;font-weight:700;color:#94a3b8;text-transform:uppercase}
+    .info-row span:last-child{font-size:.88rem;font-weight:700;color:#1e293b}
+    .itens{padding:14px 24px 0}
+    .itens-titulo{font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+    .item-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.9rem}
+    .item-nome{font-weight:700;color:#1e293b}
+    .item-qtd{font-size:.75rem;color:#94a3b8;margin-left:5px}
+    .item-val{font-weight:800;color:#1e293b;white-space:nowrap;margin-left:12px}
+    .total-row{margin:0 24px;border-top:2px solid #e2e8f0;padding:14px 0 4px;display:flex;justify-content:space-between;align-items:center}
+    .total-label{font-size:.8rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+    .total-val{font-size:1.5rem;font-weight:800;color:#6366f1}
+    .troco{text-align:right;padding:0 24px 4px;font-size:.88rem;font-weight:800;color:#16a34a}
+    .obrigado{padding:14px 24px 24px;text-align:center;font-size:.8rem;color:#94a3b8;font-style:italic}
+    @media print{body{padding:0}button{display:none!important}}
+  </style></head><body>
+  <div class="recibo">
+    <div class="cabecalho">
+      <h1>${loja}</h1>
+      ${tel ? `<p>${tel}</p>` : ''}
+      <small>Comprovante de Venda</small>
+    </div>
+    <div class="infos">
+      <div class="info-row"><span>Cliente</span><span>${cli}</span></div>
+      <div class="info-row"><span>Data</span><span>${data}</span></div>
+      <div class="info-row"><span>Pagamento</span><span>${pgto}</span></div>
+    </div>
+    <div class="itens">
+      <div class="itens-titulo">Itens</div>
+      <div style="border-top:1.5px dashed #e2e8f0;padding-top:6px">${itens}</div>
+    </div>
+    <div class="total-row">
+      <span class="total-label">Total</span>
+      <span class="total-val">${tot}</span>
+    </div>
+    ${troco ? `<div class="troco">${troco}</div>` : ''}
+    <div class="obrigado">Obrigado pela preferência! ✨</div>
+  </div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+
 function renderCfg() {
   document.getElementById('cfg-nome').value    = appConfig.nome || '';
   document.getElementById('cfg-tel').value     = appConfig.tel  || '';
@@ -1395,6 +1555,126 @@ function dvImprimir() {
     <tbody>${linhas || '<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:20px">Sem lançamentos</td></tr>'}</tbody>
   </table>
   <div class="footer">${appConfig.nome} · ${appConfig.tel || ''}</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+// ── CÂMERA / LEITOR DE CÓDIGO DE BARRAS ───────────────
+let html5QrCode = null;
+let _camTarget = 'pdv-busca';
+
+function abrirCamera(campoDestino) {
+  _camTarget = campoDestino || 'pdv-busca';
+  document.getElementById('mo-camera').classList.add('open');
+  document.getElementById('cam-status').textContent = 'Iniciando câmera...';
+  if (!html5QrCode) html5QrCode = new Html5Qrcode('camera-reader');
+  Html5Qrcode.getCameras().then(cameras => {
+    if (!cameras || !cameras.length) { document.getElementById('cam-status').textContent = '❌ Câmera não encontrada'; return; }
+    const camId = cameras[cameras.length - 1].id;
+    html5QrCode.start(
+      camId,
+      { fps: 15, qrbox: { width: 260, height: 120 } },
+      decoded => {
+        fecharCamera();
+        const campo = document.getElementById(_camTarget);
+        if (campo) { campo.value = decoded; campo.focus(); }
+        if (_camTarget === 'pdv-busca') pdvBusca(decoded);
+        toast('📷 Código lido: ' + decoded);
+      },
+      () => {}
+    ).then(() => {
+      document.getElementById('cam-status').textContent = 'Aponte a câmera para o código de barras';
+    }).catch(err => {
+      document.getElementById('cam-status').textContent = '❌ Sem permissão de câmera. Verifique as configurações do navegador.';
+      console.error(err);
+    });
+  }).catch(() => {
+    document.getElementById('cam-status').textContent = '❌ Câmera não disponível neste dispositivo';
+  });
+}
+
+function fecharCamera() {
+  document.getElementById('mo-camera').classList.remove('open');
+  if (html5QrCode && html5QrCode.isScanning) {
+    html5QrCode.stop().catch(() => {});
+  }
+}
+
+// ── IMPRIMIR ESTOQUE ──────────────────────────────────
+function imprimirEstoque() {
+  const lbl = { ok:'Em estoque', baixo:'Estoque baixo', esgotado:'Esgotado', vencido:'Vencido' };
+  const cor  = { ok:'#16a34a',   baixo:'#ca8a04',       esgotado:'#dc2626',  vencido:'#9b59b6' };
+
+  const totais = {
+    total:    produtos.length,
+    ok:       produtos.filter(p => estSt(p) === 'ok').length,
+    baixo:    produtos.filter(p => estSt(p) === 'baixo').length,
+    esgotado: produtos.filter(p => estSt(p) === 'esgotado').length,
+    vencido:  produtos.filter(p => estSt(p) === 'vencido').length,
+  };
+
+  const linhas = [...produtos]
+    .sort((a, b) => a.nome.localeCompare(b.nome))
+    .map(p => {
+      const st = estSt(p);
+      return `<tr>
+        <td>${p.nome}</td>
+        <td style="text-align:center">${p.cod || '—'}</td>
+        <td style="text-align:right">${fmt(p.preco)}</td>
+        <td style="text-align:center;font-weight:700">${p.qtd}</td>
+        <td>${p.venc ? fmtD(p.venc) : '—'}</td>
+        <td style="color:${cor[st]};font-weight:700">${lbl[st]}</td>
+      </tr>`;
+    }).join('');
+
+  const valorTotal = produtos.reduce((a, p) => a + (p.preco * p.qtd), 0);
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Estoque — ${appConfig.nome}</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:32px;color:#1e293b;font-size:13px}
+    h1{font-size:18px;margin:0}
+    h2{font-size:13px;margin:4px 0 0;color:#555}
+    .header{text-align:center;margin-bottom:24px;border-bottom:2px solid #6366f1;padding-bottom:16px}
+    .resumo{display:flex;justify-content:space-between;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+    .res-box{background:#f1f5f9;border-radius:8px;padding:10px 14px;flex:1;min-width:80px;text-align:center}
+    .res-box label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:4px}
+    .res-box span{font-size:16px;font-weight:800}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th{text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;padding:8px;border-bottom:2px solid #e2e8f0}
+    td{padding:9px 8px;border-bottom:1px solid #f1f5f9;font-size:12px}
+    tr:hover td{background:#f8fafc}
+    tfoot td{font-weight:800;font-size:13px;border-top:2px solid #e2e8f0;padding-top:10px}
+    .footer{margin-top:24px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px}
+    @media print{body{margin:16px}}
+  </style></head><body>
+  <div class="header">
+    <h1>${appConfig.nome}</h1>
+    <h2>Relatório de Estoque Geral</h2>
+    <div style="font-size:11px;color:#888;margin-top:4px">Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+  </div>
+  <div class="resumo">
+    <div class="res-box"><label>Total produtos</label><span>${totais.total}</span></div>
+    <div class="res-box"><label style="color:#16a34a">Em estoque</label><span style="color:#16a34a">${totais.ok}</span></div>
+    <div class="res-box"><label style="color:#ca8a04">⚠️ Baixo</label><span style="color:#ca8a04">${totais.baixo}</span></div>
+    <div class="res-box"><label style="color:#dc2626">🚫 Esgotado</label><span style="color:#dc2626">${totais.esgotado}</span></div>
+    <div class="res-box"><label style="color:#9b59b6">📅 Vencido</label><span style="color:#9b59b6">${totais.vencido}</span></div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>Produto</th><th style="text-align:center">Código</th>
+      <th style="text-align:right">Preço</th><th style="text-align:center">Qtd</th>
+      <th>Validade</th><th>Status</th>
+    </tr></thead>
+    <tbody>${linhas || '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px">Sem produtos cadastrados</td></tr>'}</tbody>
+    <tfoot><tr>
+      <td colspan="2">VALOR TOTAL EM ESTOQUE</td>
+      <td colspan="4" style="text-align:right;color:#6366f1">${fmt(valorTotal)}</td>
+    </tr></tfoot>
+  </table>
+  <div class="footer">${appConfig.nome}${appConfig.tel ? ' · ' + appConfig.tel : ''}${appConfig.end ? ' · ' + appConfig.end : ''}</div>
   <script>window.onload=()=>{window.print();}<\/script>
   </body></html>`);
   win.document.close();
