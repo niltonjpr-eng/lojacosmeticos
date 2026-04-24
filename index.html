@@ -190,6 +190,13 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
 @media(max-width:700px){.sb{display:none}.main{margin-left:0;padding:16px 12px 90px;padding-top:72px}.bnav{display:flex}.mhdr{display:block}.ir{flex-direction:column}.banner h1{font-size:1.5rem}.tbl{display:none}.sm{display:block !important}}
 .sm{display:none}
 
+/* Garante visibilidade após login */
+body.logged-in #tela-login { display: none !important; visibility: hidden !important; }
+body.logged-in .sb,
+body.logged-in .main,
+body.logged-in .bnav,
+body.logged-in .mhdr { visibility: visible !important; }
+
 /* CAMERA MODAL */
 #mo-camera .md{max-width:420px}
 #camera-reader{width:100%;border-radius:12px;overflow:hidden;background:#000;min-height:260px}
@@ -197,7 +204,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
 .cam-status{text-align:center;font-size:.82rem;color:var(--txm);margin-top:10px;font-weight:700}
 
 /* PDV MELHORADO */
-.pdv-search-wrap{position:relative;display:flex;gap:8px;margin-bottom:10px}
+.pdv-search-wrap{position:relative;display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .pdv-search-wrap input{flex:1;padding:13px 16px;border:2px solid var(--brd);border-radius:12px;font-family:inherit;font-size:.95rem;color:var(--tx);background:#fff;outline:none;transition:border .15s}
 .pdv-search-wrap input:focus{border-color:var(--pr)}
 .btn-cam{padding:13px 16px;background:var(--sb);color:#fff;border:none;border-radius:12px;font-size:1.1rem;cursor:pointer;transition:background .15s;flex-shrink:0}
@@ -224,6 +231,9 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
 .pgto-btn2 .pi{font-size:1.4rem}
 .pgto-btn2:hover{border-color:var(--pr);color:var(--pr)}
 .pgto-btn2.active{background:var(--pr);color:#fff;border-color:var(--pr)}
+#tela-login.hidden{display:none!important;visibility:hidden!important;pointer-events:none!important;z-index:-1!important}
+#flt-date-box{display:none}
+#flt-date-box.active{display:flex!important}
 @media print{
   body *{visibility:hidden}
   #dv-print-area,#dv-print-area *{visibility:visible}
@@ -332,11 +342,24 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
     </div>
     <button class="btn btn-p" onclick="addConta()">LANÇAR CONTA</button>
   </div>
-  <div class="tabs">
-    <div class="tab active" onclick="filtConta('todas',this)">Todas</div>
-    <div class="tab" onclick="filtConta('pendente',this)">Pendentes</div>
-    <div class="tab" onclick="filtConta('vencido',this)">Vencidas</div>
-    <div class="tab" onclick="filtConta('pago',this)">Pagas</div>
+  <!-- Filtro de data + botão imprimir despesas -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+    <div class="tabs" style="margin:0;flex:1">
+      <div class="tab active" onclick="filtConta('todas',this)">Todas</div>
+      <div class="tab" onclick="filtConta('pendente',this)">Pendentes</div>
+      <div class="tab" onclick="filtConta('vencido',this)">Vencidas</div>
+      <div class="tab" onclick="filtConta('pago',this)">Pagas</div>
+    </div>
+    <button class="btn btn-sm btn-dk" onclick="imprimirDespesas()" style="white-space:nowrap">🖨️ Imprimir</button>
+  </div>
+  <div style="background:#fef9e7;border:1.5px solid #f8d86a;border-radius:12px;padding:12px;margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+    <div style="flex:1;min-width:110px"><label style="font-size:.72rem;font-weight:700;color:#856404;display:block;margin-bottom:4px">📅 De</label>
+      <input type="date" id="ct-flt-ini" onchange="renderContas()" style="width:100%;padding:8px 10px;border:1.5px solid #f8d86a;border-radius:8px;font-family:inherit;font-size:.85rem;outline:none">
+    </div>
+    <div style="flex:1;min-width:110px"><label style="font-size:.72rem;font-weight:700;color:#856404;display:block;margin-bottom:4px">📅 Até</label>
+      <input type="date" id="ct-flt-fim" onchange="renderContas()" style="width:100%;padding:8px 10px;border:1.5px solid #f8d86a;border-radius:8px;font-family:inherit;font-size:.85rem;outline:none">
+    </div>
+    <button class="btn btn-sm btn-ol" onclick="ctFltLimp()" style="align-self:flex-end">Limpar</button>
   </div>
   <div class="card"><table class="tbl"><thead><tr><th>Descrição</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Ação</th></tr></thead><tbody id="tb-contas"></tbody></table>
     <div id="empty-c" class="empty"><div class="ico">💸</div><p>Nenhuma conta lançada</p></div>
@@ -352,7 +375,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
     <div class="card-title">🛒 Novo Atendimento</div>
     <div class="pdv-search-wrap">
       <input type="text" id="pdv-busca" placeholder="🔍 Nome ou código do produto..." autocomplete="off" oninput="pdvBusca(this.value)">
-      <button class="btn-cam" onclick="abrirCamera()" title="Escanear código de barras">📷</button>
+      <button type="button" class="btn-cam" onclick="abrirCamera('pdv-busca')" title="Escanear código de barras">📷</button>
       <div id="pdv-sug" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:#fff;border:1.5px solid var(--brd);border-radius:0 0 12px 12px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.1)"></div>
     </div>
 
@@ -427,7 +450,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
           style="padding:11px 14px;border:1.5px solid var(--brd);border-radius:10px;width:100%;font-family:inherit;font-size:.88rem;outline:none">
         <div id="pdv-clisug" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:#fff;border:1.5px solid var(--brd);border-radius:0 0 12px 12px;max-height:180px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.1)"></div>
       </div>
-      <div id="pdv-clisel" style="display:none;margin-top:8px;background:#fff;border-radius:8px;padding:10px;align-items:center;justify-content:space-between">
+      <div id="pdv-clisel" style="display:none;margin-top:8px;background:#fff;border-radius:8px;padding:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
         <div><div id="pdv-csnome" style="font-weight:800;font-size:.88rem"></div><div id="pdv-cstel" style="font-size:.7rem;color:var(--txm)"></div></div>
         <button onclick="pdvLimpCli()" style="background:none;border:none;color:var(--txm);cursor:pointer">✕</button>
       </div>
@@ -582,9 +605,21 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
     <span style="font-size:2.5rem">📋</span>
   </div>
 
-  <div style="margin-bottom:12px">
+  <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
     <input type="text" id="dv-busca" placeholder="🔍 Buscar devedor..." oninput="renderDevedores()"
-      style="padding:11px 14px;border:1.5px solid var(--brd);border-radius:10px;width:100%;font-family:inherit;font-size:.88rem;outline:none;background:#fff;color:var(--tx)">
+      style="flex:1;min-width:150px;padding:11px 14px;border:1.5px solid var(--brd);border-radius:10px;font-family:inherit;font-size:.88rem;outline:none;background:#fff;color:var(--tx)">
+    <button class="btn btn-sm btn-dk" onclick="imprimirFiados()" style="white-space:nowrap">🖨️ Fiados</button>
+    <button class="btn btn-sm" style="background:#16a34a;color:#fff;white-space:nowrap" onclick="imprimirPagamentos()">🖨️ Pagamentos</button>
+  </div>
+
+  <div style="background:#fef9e7;border:1.5px solid #f8d86a;border-radius:12px;padding:12px;margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end" id="flt-date-box">
+    <div style="flex:1;min-width:110px"><label style="font-size:.72rem;font-weight:700;color:#856404;display:block;margin-bottom:4px">📅 De</label>
+      <input type="date" id="flt-data-ini" onchange="renderDevedores()" style="width:100%;padding:8px 10px;border:1.5px solid #f8d86a;border-radius:8px;font-family:inherit;font-size:.85rem;outline:none">
+    </div>
+    <div style="flex:1;min-width:110px"><label style="font-size:.72rem;font-weight:700;color:#856404;display:block;margin-bottom:4px">📅 Até</label>
+      <input type="date" id="flt-data-fim" onchange="renderDevedores()" style="width:100%;padding:8px 10px;border:1.5px solid #f8d86a;border-radius:8px;font-family:inherit;font-size:.85rem;outline:none">
+    </div>
+    <button class="btn btn-sm btn-ol" onclick="fltLimpData()" style="align-self:flex-end">Limpar</button>
   </div>
 
   <div id="lista-dv"></div>
@@ -682,9 +717,34 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);min-he
 <script>
 // ── LOGIN ─────────────────────────────────────────────
 function entrar() {
-  if (document.getElementById('inp-senha').value === '1234') {
-    document.getElementById('tela-login').style.display = 'none';
+  const senha = document.getElementById('inp-senha').value.trim();
+  if (senha === '1234') {
+    console.log('✅ Senha correta - entrando no sistema');
+    // Adiciona classe logged-in ao body
+    document.body.classList.add('logged-in');
+    const tela = document.getElementById('tela-login');
+    if (tela) {
+      tela.style.display = 'none';
+      tela.style.visibility = 'hidden';
+      tela.style.pointerEvents = 'none';
+      tela.style.zIndex = '-999';
+      tela.classList.add('hidden');
+    }
+    // Garante que main está visível
+    const main = document.querySelector('main');
+    if (main) {
+      main.style.display = 'block';
+      main.style.visibility = 'visible';
+      main.style.opacity = '1';
+    }
+    // Força render
+    setTimeout(() => {
+      document.body.style.visibility = 'visible';
+      const sb = document.querySelector('.sb');
+      if (sb) sb.style.visibility = 'visible';
+    }, 50);
   } else {
+    console.log('❌ Senha incorreta');
     document.getElementById('login-erro').style.display = 'block';
     document.getElementById('inp-senha').value = '';
     document.getElementById('inp-senha').focus();
@@ -725,6 +785,7 @@ function toArr(v) {
 }
 
 // Carrega dados ao abrir e escuta mudanças em tempo real
+let _initTimer = null;
 dbRef.on('value', snap => {
   const d = snap.val();
   if (d) {
@@ -736,8 +797,14 @@ dbRef.on('value', snap => {
       if (appConfig.nome === 'Minha Perfumaria') { appConfig.nome = 'NilSyste'; salvar(); }
     }
   }
+  clearTimeout(_initTimer);
+  _initTimer = setTimeout(initApp, 150);
+}, err => { 
+  console.error('Firebase:', err); 
   initApp();
-}, err => { console.error('Firebase:', err); initApp(); });
+  // Mostra erro mas permite continuar
+  syncIco('⚠️');
+});
 
 // ── UTILS ─────────────────────────────────────────────
 const fmt  = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
@@ -922,12 +989,16 @@ function copiarExt() {
 // ── CONTAS ────────────────────────────────────────────
 function renderContas() {
   const h = hoje();
+  const dataIni = document.getElementById('ct-flt-ini')?.value || '';
+  const dataFim = document.getElementById('ct-flt-fim')?.value || '';
   let tot = 0, pend = 0, vencArr = [];
   const filt = filtContas;
   const rows = contas.filter(c => {
     const st = stConta(c.data, c.pago);
     if (!c.pago) { tot += c.valor; pend++; }
     if (st === 'vencido') vencArr.push(c);
+    if (dataIni && c.data < dataIni) return false;
+    if (dataFim && c.data > dataFim) return false;
     return filt === 'todas' || st === filt;
   });
 
@@ -1019,7 +1090,7 @@ function renderEst() {
   const el = document.getElementById('est-lista');
   if (!lista.length) { el.innerHTML = '<div class="empty"><div class="ico">📦</div><p>Nenhum produto</p></div>'; return; }
   const lbl = { ok:'✅ Em estoque', baixo:'⚠️ Baixo', esgotado:'🚫 Esgotado', vencido:'📅 Vencido' };
-  const chp = { ok:'chip-g', baixo:'chip-y', esgotado:'chip-r', vencido:'chip-b' };
+  const chp = { ok:'chip-g', baixo:'chip-y', esgotado:'chip-r', vencido:'chip-gr' };
   el.innerHTML = lista.map(p => {
     const st = estSt(p);
     return `<div class="estc ${st}">
@@ -1310,72 +1381,367 @@ function pdvNova() {
   document.getElementById('pdv-rec').style.display = 'none';
   document.getElementById('pdv-receb').value = '';
   document.getElementById('pdv-trocoVal').textContent = 'R$ 0,00';
-  document.querySelectorAll('.pgto-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+  document.getElementById('pdv-troco').style.display = 'block';
+  document.getElementById('pdv-fiado').style.display = 'none';
+  document.querySelectorAll('.pgto-btn2').forEach((b, i) => b.classList.toggle('active', i === 0));
   pdvLimpCli();
 }
 
-function imprimirRecibo() {
-  const loja  = document.getElementById('rec-loja').textContent;
-  const tel   = document.getElementById('rec-tel').textContent;
-  const cli   = document.getElementById('rec-cli').textContent;
-  const data  = document.getElementById('rec-data').textContent;
-  const pgto  = document.getElementById('rec-pgto').textContent;
-  const itens = document.getElementById('rec-itens').innerHTML;
-  const tot   = document.getElementById('rec-tot').textContent;
-  const trocoEl = document.getElementById('rec-troco');
-  const troco = trocoEl.style.display !== 'none' ? trocoEl.textContent : '';
+// ── DEVEDORES / FIADOS ────────────────────────────────
+function renderDevedores() {
+  const busca = (document.getElementById('dv-busca')?.value || '').toLowerCase();
+  const dataIni = document.getElementById('flt-data-ini')?.value || '';
+  const dataFim = document.getElementById('flt-data-fim')?.value || '';
+
+  let totalAbert = 0, totalFiad = 0, totalPag = 0;
+  let lista = clientes.filter(c => {
+    if (busca && !c.nome.toLowerCase().includes(busca)) return false;
+    const saldo = saldoCli(c);
+    if (saldo <= 0) return false;
+    // Filtra por data se informado
+    if (dataIni || dataFim) {
+      const temLancNoPeriodo = c.extrato.some(e => {
+        if (!e.data) return false;
+        if (dataIni && e.data < dataIni) return false;
+        if (dataFim && e.data > dataFim) return false;
+        return true;
+      });
+      if (!temLancNoPeriodo) return false;
+    }
+    totalAbert += saldo;
+    totalFiad += c.extrato.filter(e => e.tipo === 'fiado').reduce((a, e) => a + e.valor, 0);
+    totalPag += c.extrato.filter(e => e.tipo === 'pagamento').reduce((a, e) => a + e.valor, 0);
+    return true;
+  });
+
+  document.getElementById('dv-total').textContent = fmt(totalAbert);
+  document.getElementById('dv-sub').textContent = lista.length + ' devedor' + (lista.length !== 1 ? 'es' : '');
+  if (document.getElementById('badge-dv')) document.getElementById('badge-dv').textContent = lista.length;
+
+  const el = document.getElementById('lista-dv');
+  if (!lista.length) { el.innerHTML = '<div class="empty"><div class="ico">📋</div><p>Sem devedores</p></div>'; return; }
+  el.innerHTML = lista.map(c => {
+    const saldo = saldoCli(c);
+    const fiad = c.extrato.filter(e => e.tipo === 'fiado').reduce((a, e) => a + e.valor, 0);
+    return `<div class="clc" style="background:linear-gradient(135deg,#fdecea,#fff5f3);border-left:4px solid var(--red)">
+      <div class="av" style="background:linear-gradient(135deg,var(--red),#e74c3c);color:#fff">${c.nome[0]}</div>
+      <div class="cl-info"><div class="nome">${c.nome}</div><div class="tel">${c.tel}</div></div>
+      <div class="cl-div"><label>Débito</label><div class="val" style="color:var(--red)">${fmt(saldo)}</div></div>
+      <div class="acts" style="margin-left:8px">
+        <button class="btn btn-sm btn-b" onclick="openExt(${c.id})">📋</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fltLimpData() {
+  document.getElementById('flt-data-ini').value = '';
+  document.getElementById('flt-data-fim').value = '';
+  renderDevedores();
+}
+
+function ctFltLimp() {
+  document.getElementById('ct-flt-ini').value = '';
+  document.getElementById('ct-flt-fim').value = '';
+  renderContas();
+}
+
+function imprimirDespesas() {
+  const dataIni = document.getElementById('ct-flt-ini')?.value || '';
+  const dataFim = document.getElementById('ct-flt-fim')?.value || '';
+  const filt = filtContas;
+
+  const lista = contas.filter(c => {
+    if (dataIni && c.data < dataIni) return false;
+    if (dataFim && c.data > dataFim) return false;
+    if (filt !== 'todas') { const st = stConta(c.data, c.pago); if (st !== filt) return false; }
+    return true;
+  }).sort((a, b) => b.data.localeCompare(a.data));
+
+  const totalGeral  = lista.reduce((a, c) => a + c.valor, 0);
+  const totalPago   = lista.filter(c => c.pago).reduce((a, c) => a + c.valor, 0);
+  const totalAberto = lista.filter(c => !c.pago).reduce((a, c) => a + c.valor, 0);
+
+  const statusLabel = { pago:'✅ Pago', vencido:'🔴 Vencido', 'vence-hoje':'⚠️ Vence hoje', 'vence-breve':'🔵 Em breve', pendente:'⬜ Pendente' };
+  const statusCor   = { pago:'#16a34a', vencido:'#dc2626', 'vence-hoje':'#ca8a04', 'vence-breve':'#2563eb', pendente:'#888' };
+
+  const linhas = lista.map(c => {
+    const st = stConta(c.data, c.pago);
+    return `<tr>
+      <td>${fmtD(c.data)}</td>
+      <td>${c.cat} ${c.desc}</td>
+      <td style="text-align:right;font-weight:700">${fmt(c.valor)}</td>
+      <td style="color:${statusCor[st]||'#888'};font-weight:700">${statusLabel[st]||st}</td>
+    </tr>`;
+  }).join('');
+
+  const periodoTxt = dataIni || dataFim
+    ? `Período: ${dataIni ? fmtD(dataIni) : 'início'} até ${dataFim ? fmtD(dataFim) : 'hoje'}`
+    : 'Todas as despesas';
+  const filtTxt = filt !== 'todas' ? ` · Filtro: ${filt}` : '';
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>Recibo — ${loja}</title>
+  <title>Despesas — ${appConfig.nome}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;padding:28px;color:#1e293b;font-size:13px}
+    .header{text-align:center;margin-bottom:22px;border-bottom:2px solid #6366f1;padding-bottom:14px}
+    h1{font-size:18px;margin:0} h2{font-size:13px;color:#555;margin:4px 0 0}
+    .sub{font-size:11px;color:#888;margin-top:4px}
+    .resumo{display:flex;justify-content:space-around;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+    .res{background:#f1f5f9;border-radius:8px;padding:10px 14px;flex:1;min-width:90px;text-align:center}
+    .res label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px}
+    .res span{font-size:15px;font-weight:800}
+    table{width:100%;border-collapse:collapse}
+    th{text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;padding:8px;border-bottom:2px solid #e2e8f0}
+    td{padding:9px 8px;border-bottom:1px solid #f1f5f9;font-size:12px}
+    tfoot td{font-weight:800;font-size:13px;border-top:2px solid #e2e8f0;padding-top:10px}
+    .footer{margin-top:20px;text-align:center;font-size:10px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px}
+    @media print{body{padding:14px}}
+  </style></head><body>
+  <div class="header">
+    <h1>${appConfig.nome}</h1>
+    <h2>Relatório de Despesas</h2>
+    <div class="sub">${periodoTxt}${filtTxt} · Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+  </div>
+  <div class="resumo">
+    <div class="res"><label>Total geral</label><span>${fmt(totalGeral)}</span></div>
+    <div class="res"><label style="color:#16a34a">✅ Pago</label><span style="color:#16a34a">${fmt(totalPago)}</span></div>
+    <div class="res"><label style="color:#dc2626">⏳ Em aberto</label><span style="color:#dc2626">${fmt(totalAberto)}</span></div>
+  </div>
+  <table>
+    <thead><tr><th>Vencimento</th><th>Descrição</th><th style="text-align:right">Valor</th><th>Status</th></tr></thead>
+    <tbody>${linhas || '<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:20px">Sem despesas no período</td></tr>'}</tbody>
+    <tfoot><tr>
+      <td colspan="2">TOTAL DO PERÍODO</td>
+      <td style="text-align:right;color:#6366f1">${fmt(totalGeral)}</td>
+      <td></td>
+    </tr></tfoot>
+  </table>
+  <div class="footer">${appConfig.nome}${appConfig.tel ? ' · ' + appConfig.tel : ''}</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+function imprimirPagamentos() {
+  const dataIni = document.getElementById('flt-data-ini')?.value || '';
+  const dataFim = document.getElementById('flt-data-fim')?.value || '';
+
+  let listaPag = [];
+  clientes.forEach(c => {
+    c.extrato.forEach(e => {
+      if (e.tipo !== 'pagamento') return;
+      if (dataIni && e.data < dataIni) return;
+      if (dataFim && e.data > dataFim) return;
+      listaPag.push({ cliente: c.nome, tel: c.tel, ...e });
+    });
+  });
+  listaPag.sort((a, b) => b.data.localeCompare(a.data));
+
+  const totalPago = listaPag.reduce((a, e) => a + e.valor, 0);
+  const qtdCli    = [...new Set(listaPag.map(e => e.cliente))].length;
+
+  const linhas = listaPag.map(e =>
+    `<tr>
+      <td>${fmtD(e.data)}</td>
+      <td><strong>${e.cliente}</strong></td>
+      <td style="font-size:11px;color:#64748b">${e.tel}</td>
+      <td>${e.desc || 'Pagamento'}</td>
+      <td style="text-align:right;color:#16a34a;font-weight:800">${fmt(e.valor)}</td>
+    </tr>`
+  ).join('');
+
+  const periodoTxt = dataIni || dataFim
+    ? `Período: ${dataIni ? fmtD(dataIni) : 'início'} até ${dataFim ? fmtD(dataFim) : 'hoje'}`
+    : 'Todos os pagamentos';
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Pagamentos Recebidos — ${appConfig.nome}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;padding:28px;color:#1e293b;font-size:13px}
+    .header{text-align:center;margin-bottom:22px;border-bottom:2px solid #16a34a;padding-bottom:14px}
+    h1{font-size:18px;margin:0} h2{font-size:13px;color:#555;margin:4px 0 0}
+    .sub{font-size:11px;color:#888;margin-top:4px}
+    .resumo{display:flex;justify-content:space-around;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+    .res{background:#f0fdf4;border-radius:8px;padding:10px 14px;flex:1;min-width:90px;text-align:center;border:1px solid #bbf7d0}
+    .res label{font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;display:block;margin-bottom:3px}
+    .res span{font-size:15px;font-weight:800;color:#16a34a}
+    table{width:100%;border-collapse:collapse}
+    th{text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;padding:8px;border-bottom:2px solid #e2e8f0}
+    td{padding:9px 8px;border-bottom:1px solid #f1f5f9;font-size:12px}
+    tfoot td{font-weight:800;font-size:13px;border-top:2px solid #e2e8f0;padding-top:10px;color:#16a34a}
+    .footer{margin-top:20px;text-align:center;font-size:10px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px}
+    @media print{body{padding:14px}}
+  </style></head><body>
+  <div class="header">
+    <h1>${appConfig.nome}</h1>
+    <h2>Relatório de Pagamentos Recebidos</h2>
+    <div class="sub">${periodoTxt} · Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+  </div>
+  <div class="resumo">
+    <div class="res"><label>Total recebido</label><span>${fmt(totalPago)}</span></div>
+    <div class="res"><label>Nº pagamentos</label><span>${listaPag.length}</span></div>
+    <div class="res"><label>Clientes</label><span>${qtdCli}</span></div>
+  </div>
+  <table>
+    <thead><tr><th>Data</th><th>Cliente</th><th>Telefone</th><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead>
+    <tbody>${linhas || '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px">Nenhum pagamento no período</td></tr>'}</tbody>
+    <tfoot><tr>
+      <td colspan="4">TOTAL RECEBIDO</td>
+      <td style="text-align:right">${fmt(totalPago)}</td>
+    </tr></tfoot>
+  </table>
+  <div class="footer">${appConfig.nome}${appConfig.tel ? ' · ' + appConfig.tel : ''}</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+function imprimirFiados() {
+  const dataIni = document.getElementById('flt-data-ini')?.value || '';
+  const dataFim = document.getElementById('flt-data-fim')?.value || '';
+  
+  let listaFiad = [];
+  clientes.forEach(c => {
+    c.extrato.forEach(e => {
+      if (e.tipo === 'fiado') {
+        if (dataIni && e.data < dataIni) return;
+        if (dataFim && e.data > dataFim) return;
+        listaFiad.push({ cliente: c.nome, tel: c.tel, ...e });
+      }
+    });
+  });
+
+  const totalFiad = listaFiad.reduce((a, e) => a + e.valor, 0);
+  const totalPago = clientes.reduce((a, c) => a + c.extrato.filter(e => {
+    if (e.tipo !== 'pagamento') return false;
+    if (dataIni && e.data < dataIni) return false;
+    if (dataFim && e.data > dataFim) return false;
+    return true;
+  }).reduce((b, e) => b + e.valor, 0), 0);
+
+  const linhas = [...listaFiad]
+    .sort((a, b) => b.data.localeCompare(a.data))
+    .map(e => `<tr><td>${fmtD(e.data)}</td><td>${e.cliente}</td><td>${e.desc}</td><td style="text-align:right">${fmt(e.valor)}</td><td>${e.prazo ? fmtD(e.prazo) : '—'}</td></tr>`)
+    .join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Relatório de Fiados</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     @page{margin:0}
-    body{font-family:Arial,sans-serif;background:#fff;width:100%;min-height:100vh}
-    .recibo{width:100%;border:none;border-radius:0;overflow:hidden}
-    .cabecalho{background:#6366f1;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:28px 24px 22px;text-align:center}
-    .cabecalho h1{color:#fff;font-size:1.4rem;font-weight:800;letter-spacing:.5px}
-    .cabecalho p{color:rgba(255,255,255,.85);font-size:.9rem;margin-top:5px}
-    .cabecalho small{color:rgba(255,255,255,.55);font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;display:block;margin-top:10px}
-    .infos{padding:14px 24px 0}
-    .info-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f1f5f9}
-    .info-row span:first-child{font-size:.75rem;font-weight:700;color:#94a3b8;text-transform:uppercase}
-    .info-row span:last-child{font-size:.88rem;font-weight:700;color:#1e293b}
-    .itens{padding:14px 24px 0}
-    .itens-titulo{font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
-    .item-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.9rem}
-    .item-nome{font-weight:700;color:#1e293b}
-    .item-qtd{font-size:.75rem;color:#94a3b8;margin-left:5px}
-    .item-val{font-weight:800;color:#1e293b;white-space:nowrap;margin-left:12px}
-    .total-row{margin:0 24px;border-top:2px solid #e2e8f0;padding:14px 0 4px;display:flex;justify-content:space-between;align-items:center}
-    .total-label{font-size:.8rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
-    .total-val{font-size:1.5rem;font-weight:800;color:#6366f1}
-    .troco{text-align:right;padding:0 24px 4px;font-size:.88rem;font-weight:800;color:#16a34a}
-    .obrigado{padding:14px 24px 24px;text-align:center;font-size:.8rem;color:#94a3b8;font-style:italic}
-    @media print{body{padding:0}button{display:none!important}}
+    body{font-family:Arial,sans-serif;background:#fff;padding:24px;color:#1e293b;font-size:13px}
+    .header{text-align:center;margin-bottom:20px;border-bottom:2px solid #6366f1;padding-bottom:12px}
+    h1{font-size:18px;margin:0}
+    .info{font-size:11px;color:#888;margin-top:6px}
+    .resumo{display:flex;justify-content:space-around;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+    .res-box{background:#f1f5f9;border-radius:8px;padding:10px 12px;flex:1;min-width:100px;text-align:center}
+    .res-box label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px}
+    .res-box span{font-size:15px;font-weight:800}
+    table{width:100%;border-collapse:collapse;margin-top:6px}
+    th{text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;padding:8px;border-bottom:2px solid #e2e8f0}
+    td{padding:9px 8px;border-bottom:1px solid #f1f5f9;font-size:12px}
+    tr:hover td{background:#f8fafc}
+    tfoot td{font-weight:800;font-size:13px;border-top:2px solid #e2e8f0;padding-top:10px}
+    .footer{margin-top:16px;text-align:center;font-size:10px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px}
+    @media print{body{padding:12px}}
   </style></head><body>
-  <div class="recibo">
-    <div class="cabecalho">
-      <h1>${loja}</h1>
-      ${tel ? `<p>${tel}</p>` : ''}
-      <small>Comprovante de Venda</small>
-    </div>
-    <div class="infos">
-      <div class="info-row"><span>Cliente</span><span>${cli}</span></div>
-      <div class="info-row"><span>Data</span><span>${data}</span></div>
-      <div class="info-row"><span>Pagamento</span><span>${pgto}</span></div>
-    </div>
-    <div class="itens">
-      <div class="itens-titulo">Itens</div>
-      <div style="border-top:1.5px dashed #e2e8f0;padding-top:6px">${itens}</div>
-    </div>
-    <div class="total-row">
-      <span class="total-label">Total</span>
-      <span class="total-val">${tot}</span>
-    </div>
-    ${troco ? `<div class="troco">${troco}</div>` : ''}
-    <div class="obrigado">Obrigado pela preferência! ✨</div>
+  <div class="header">
+    <h1>${appConfig.nome}</h1>
+    <div class="info">Relatório de Vendas Fiado ${dataIni || dataFim ? `(${dataIni ? fmtD(dataIni) : 'início'} a ${dataFim ? fmtD(dataFim) : 'hoje'})` : ''}</div>
+    <div class="info">Gerado em ${new Date().toLocaleString('pt-BR')}</div>
   </div>
+  <div class="resumo">
+    <div class="res-box"><label>Total Fiado</label><span style="color:#dc2626">${fmt(totalFiad)}</span></div>
+    <div class="res-box"><label>Total Pago</label><span style="color:#16a34a">${fmt(totalPago)}</span></div>
+    <div class="res-box"><label>Saldo</label><span style="color:#6366f1">${fmt(totalFiad - totalPago)}</span></div>
+  </div>
+  <table>
+    <thead><tr><th>Data</th><th>Cliente</th><th>Descrição</th><th style="text-align:right">Valor</th><th>Prazo</th></tr></thead>
+    <tbody>${linhas || '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px">Sem registros</td></tr>'}</tbody>
+    <tfoot><tr>
+      <td colspan="3">TOTAL</td>
+      <td style="text-align:right;color:#dc2626">${fmt(totalFiad)}</td>
+      <td></td>
+    </tr></tfoot>
+  </table>
+  <div class="footer">${appConfig.nome}${appConfig.tel ? ' · ' + appConfig.tel : ''}</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+function imprimirRecibo() {
+  const loja    = document.getElementById('rec-loja').textContent;
+  const tel     = document.getElementById('rec-tel').textContent;
+  const cli     = document.getElementById('rec-cli').textContent;
+  const data    = document.getElementById('rec-data').textContent;
+  const pgto    = document.getElementById('rec-pgto').textContent;
+  const tot     = document.getElementById('rec-tot').textContent;
+  const trocoEl = document.getElementById('rec-troco');
+  const troco   = trocoEl.style.display !== 'none' ? trocoEl.textContent : '';
+
+  // Extrai itens sem CSS vars - usa textContent direto de cada div filho
+  let itensHTML = '';
+  document.getElementById('rec-itens').querySelectorAll('div').forEach(div => {
+    const spans = div.querySelectorAll('span');
+    if (spans.length >= 2) {
+      const nome = spans[0].textContent;
+      const qtd  = spans[1] ? spans[1].textContent : '';
+      const val  = spans[spans.length - 1].textContent;
+      itensHTML += `<div class="ir"><div><b>${nome}</b> <small>${qtd}</small></div><b>${val}</b></div>`;
+    }
+  });
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Recibo</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    @page{margin:0}
+    body{font-family:Arial,sans-serif;background:#fff;width:100%}
+    .cab{background:#6366f1;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:28px 32px 22px;text-align:center}
+    .cab h1{color:#fff;font-size:1.5rem;font-weight:800}
+    .cab p{color:rgba(255,255,255,.85);font-size:.95rem;margin-top:5px}
+    .cab small{display:block;color:rgba(255,255,255,.55);font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-top:10px}
+    .sec{padding:14px 32px 0}
+    .row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:.9rem}
+    .row .l{font-size:.72rem;font-weight:700;color:#94a3b8;text-transform:uppercase}
+    .row .v{font-weight:700;color:#1e293b}
+    .tit{font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+    .sep{border-top:1.5px dashed #e2e8f0;margin-bottom:6px}
+    .ir{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:.9rem;color:#1e293b}
+    .ir small{font-size:.72rem;color:#94a3b8;margin-left:5px}
+    .tot{margin:0 32px;border-top:2px solid #e2e8f0;padding:14px 0 4px;display:flex;justify-content:space-between;align-items:center}
+    .tot .l{font-size:.78rem;font-weight:800;color:#94a3b8;text-transform:uppercase}
+    .tot .v{font-size:1.6rem;font-weight:800;color:#6366f1}
+    .trc{text-align:right;padding:2px 32px 4px;font-size:.9rem;font-weight:800;color:#16a34a}
+    .tks{padding:14px 32px 28px;text-align:center;font-size:.82rem;color:#94a3b8;font-style:italic}
+    @media print{button{display:none!important}}
+  </style></head><body>
+  <div class="cab">
+    <h1>${loja}</h1>
+    ${tel ? `<p>${tel}</p>` : ''}
+    <small>Comprovante de Venda</small>
+  </div>
+  <div class="sec">
+    <div class="row"><span class="l">Cliente</span><span class="v">${cli}</span></div>
+    <div class="row"><span class="l">Data</span><span class="v">${data}</span></div>
+    <div class="row"><span class="l">Pagamento</span><span class="v">${pgto}</span></div>
+  </div>
+  <div class="sec">
+    <div class="tit" style="margin-top:6px">Itens</div>
+    <div class="sep"></div>
+    ${itensHTML || '<div class="ir" style="color:#94a3b8">Sem itens</div>'}
+  </div>
+  <div class="tot"><span class="l">Total</span><span class="v">${tot}</span></div>
+  ${troco ? `<div class="trc">${troco}</div>` : ''}
+  <div class="tks">Obrigado pela preferência! ✨</div>
   <script>window.onload=()=>{window.print();}<\/script>
   </body></html>`);
   win.document.close();
@@ -1432,43 +1798,6 @@ function resetar() {
 }
 
 // ── DEVEDORES ─────────────────────────────────────────
-function renderDevedores() {
-  const busca = (document.getElementById('dv-busca')?.value || '').toLowerCase();
-  const devs = clientes.filter(c => saldoCli(c) > 0 && (!busca || c.nome.toLowerCase().includes(busca)));
-  const totalGeral = devs.reduce((a, c) => a + saldoCli(c), 0);
-
-  document.getElementById('dv-total').textContent = fmt(totalGeral);
-  document.getElementById('dv-sub').textContent   = devs.length + ' devedor' + (devs.length !== 1 ? 'es' : '');
-  document.getElementById('badge-dv').textContent = devs.length;
-
-  const el = document.getElementById('lista-dv');
-  if (!devs.length) {
-    el.innerHTML = '<div class="empty"><div class="ico">🎉</div><p>Nenhum devedor no momento</p></div>';
-    return;
-  }
-
-  const sorted = [...devs].sort((a, b) => saldoCli(b) - saldoCli(a));
-  el.innerHTML = sorted.map(c => {
-    const saldo = saldoCli(c);
-    const ultLanc = c.extrato.length ? c.extrato[c.extrato.length - 1] : null;
-    const prazoVenc = c.extrato.filter(e => e.tipo === 'fiado' && e.prazo).map(e => e.prazo).sort().pop();
-    const stPrazo = prazoVenc ? (new Date(prazoVenc + 'T00:00:00') < hoje() ? 'chip-r' : 'chip-y') : '';
-    return `<div class="clc" style="cursor:pointer" onclick="dvAbrirHistorico(${c.id})">
-      <div class="av">${c.nome[0]}</div>
-      <div class="cl-info">
-        <div class="nome">${c.nome}</div>
-        <div class="tel">${c.tel}${prazoVenc ? ' · <span class="chip '+stPrazo+'" style="font-size:.65rem">Prazo: '+fmtD(prazoVenc)+'</span>' : ''}</div>
-        ${ultLanc ? `<div style="font-size:.7rem;color:var(--txm);margin-top:2px">Último: ${fmtD(ultLanc.data)} — ${ultLanc.desc}</div>` : ''}
-      </div>
-      <div class="cl-div">
-        <label>Dívida</label>
-        <div class="val vr">${fmt(saldo)}</div>
-      </div>
-      <span style="color:var(--txm);margin-left:8px;font-size:1.1rem">›</span>
-    </div>`;
-  }).join('');
-}
-
 let dvCliAtivo = null;
 
 function dvAbrirHistorico(id) {
