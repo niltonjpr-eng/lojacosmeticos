@@ -553,7 +553,10 @@ body.logged-in .mhdr { visibility: visible !important; }
       <div class="tab" onclick="estFilt('esgotado',this)">🚫 Esgotado</div>
       <div class="tab" onclick="estFilt('vencido',this)">📅 Vencido</div>
     </div>
-    <button class="btn btn-sm btn-dk" onclick="imprimirEstoque()" style="white-space:nowrap">🖨️ Imprimir</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-g" onclick="abrirImportMassa()" style="white-space:nowrap">📋 Importar em Massa</button>
+        <button class="btn btn-sm btn-dk" onclick="imprimirEstoque()" style="white-space:nowrap">🖨️ Imprimir</button>
+      </div>
   </div>
   <div id="est-lista"></div>
 </div>
@@ -695,6 +698,55 @@ body.logged-in .mhdr { visibility: visible !important; }
         <span style="font-size:.85rem;font-weight:700;color:var(--txm)">TOTAL EM ABERTO</span>
         <span id="dv-total-modal" style="font-size:1.2rem;font-weight:800;color:var(--red)"></span>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: IMPORTAR EM MASSA -->
+<div class="mo" id="mo-import-massa">
+  <div class="md" style="max-width:680px;max-height:92vh">
+    <div class="md-hdr">
+      <h3>📋 Importar Produtos em Massa</h3>
+      <button class="md-close" onclick="closeModal('mo-import-massa')">✕</button>
+    </div>
+
+    <div style="background:#f0eeff;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:.82rem;color:#4338ca;font-weight:700">
+      💡 Cole aqui sua lista de produtos. Cada linha = 1 produto.<br>
+      <span style="font-weight:600;opacity:.85">Formato aceito: <code style="background:#fff;padding:1px 6px;border-radius:4px">Nome | Preço | Quantidade | Código (opcional)</code></span>
+    </div>
+
+    <!-- Colar texto bruto -->
+    <div class="fg">
+      <label>📝 Cole sua lista (do Excel, Bloco de Notas, WhatsApp...)</label>
+      <textarea id="imp-massa-txt" rows="8" placeholder="Kit Deleite | 35,90 | 10&#10;Perfume Floral | 89,90 | 5 | 001&#10;Hidratante Rose | 45,00 | 8&#10;..." 
+        oninput="impMassaPreview()"
+        style="width:100%;padding:12px;border:1.5px solid var(--brd);border-radius:10px;font-family:monospace;font-size:.85rem;resize:vertical;outline:none;background:#fafafa"></textarea>
+    </div>
+
+    <!-- Preview tabela -->
+    <div id="imp-massa-prev" style="display:none">
+      <div style="font-size:.78rem;font-weight:800;color:var(--txm);text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <span id="imp-massa-count">0 produtos reconhecidos</span>
+        <button onclick="impMassaLimpar()" style="background:none;border:none;color:var(--red);font-size:.75rem;font-weight:800;cursor:pointer">✕ Limpar</button>
+      </div>
+      <div style="overflow-x:auto;max-height:220px;border:1.5px solid var(--brd);border-radius:10px">
+        <table class="tbl" style="font-size:.8rem">
+          <thead><tr>
+            <th>Nome</th>
+            <th>Preço</th>
+            <th>Qtd</th>
+            <th>Código</th>
+            <th style="color:var(--green)">✓</th>
+          </tr></thead>
+          <tbody id="imp-massa-tbody"></tbody>
+        </table>
+      </div>
+      <div id="imp-massa-warn" style="display:none;background:#fff8e1;border:1.5px solid #f8d86a;border-radius:8px;padding:10px;margin-top:10px;font-size:.78rem;font-weight:700;color:#856404"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-p" style="flex:1;margin:0;border-radius:12px" id="imp-massa-btn" onclick="impMassaSalvar()" disabled>✅ Importar Produtos</button>
+      <button class="btn btn-ol" style="flex:1;margin:0;border-radius:12px" onclick="closeModal('mo-import-massa')">Cancelar</button>
     </div>
   </div>
 </div>
@@ -1383,8 +1435,13 @@ function pdvNova() {
   document.getElementById('pdv-trocoVal').textContent = 'R$ 0,00';
   document.getElementById('pdv-troco').style.display = 'block';
   document.getElementById('pdv-fiado').style.display = 'none';
+  document.getElementById('pdv-pgto').style.display = 'none';
   document.querySelectorAll('.pgto-btn2').forEach((b, i) => b.classList.toggle('active', i === 0));
   pdvLimpCli();
+  carrinho = [];
+  pdvProd = null;
+  pdvTipo = 'dinheiro';
+  renderCarrinho();
 }
 
 // ── DEVEDORES / FIADOS ────────────────────────────────
@@ -1887,6 +1944,101 @@ function dvImprimir() {
   <script>window.onload=()=>{window.print();}<\/script>
   </body></html>`);
   win.document.close();
+}
+
+// ── IMPORTAR EM MASSA ─────────────────────────────────
+function abrirImportMassa() {
+  document.getElementById('mo-import-massa').classList.add('open');
+  document.getElementById('imp-massa-txt').value = '';
+  document.getElementById('imp-massa-prev').style.display = 'none';
+  document.getElementById('imp-massa-btn').disabled = true;
+}
+
+function impMassaParseLinhas(txt) {
+  const separadores = /[|\t;]/;
+  return txt.split('\n').map(l => l.trim()).filter(Boolean).map(linha => {
+    // tenta separar por | ou tab ou ;
+    let partes = linha.split(separadores).map(p => p.trim());
+    // se não tem separador, tenta vírgula como separador de campos
+    if (partes.length === 1) {
+      // linha sem separador — só nome
+      partes = [linha];
+    }
+    const nome  = partes[0] || '';
+    // preço: remove R$, espaços, troca vírgula por ponto
+    const precoStr = (partes[1] || '').replace(/[R$\s]/g,'').replace(',','.');
+    const preco = parseFloat(precoStr);
+    const qtd   = parseInt((partes[2] || '').replace(/\D/g,'')) || 0;
+    const cod   = partes[3] || '';
+    const ok    = nome.length > 0 && !isNaN(preco) && preco > 0;
+    return { nome, preco: ok ? preco : NaN, qtd, cod, ok };
+  });
+}
+
+function impMassaPreview() {
+  const txt = document.getElementById('imp-massa-txt').value;
+  const prev = document.getElementById('imp-massa-prev');
+  const btn  = document.getElementById('imp-massa-btn');
+  if (!txt.trim()) { prev.style.display = 'none'; btn.disabled = true; return; }
+
+  const linhas = impMassaParseLinhas(txt);
+  const validas = linhas.filter(l => l.ok);
+  const invalidas = linhas.filter(l => !l.ok);
+
+  prev.style.display = 'block';
+  document.getElementById('imp-massa-count').textContent = validas.length + ' produto(s) reconhecido(s)';
+  btn.disabled = validas.length === 0;
+
+  const fmt2 = v => isNaN(v) ? '<span style="color:var(--red)">⚠️ inválido</span>' : 'R$ ' + Number(v).toFixed(2).replace('.',',');
+  document.getElementById('imp-massa-tbody').innerHTML = linhas.map((l, i) =>
+    `<tr style="${!l.ok ? 'opacity:.5;background:#fff5f5' : ''}">
+      <td style="font-weight:700">${l.nome || '<em style="color:#aaa">vazio</em>'}</td>
+      <td>${fmt2(l.preco)}</td>
+      <td>${l.qtd}</td>
+      <td style="color:var(--txm)">${l.cod || '—'}</td>
+      <td>${l.ok ? '✅' : '❌'}</td>
+    </tr>`
+  ).join('');
+
+  const warn = document.getElementById('imp-massa-warn');
+  if (invalidas.length) {
+    warn.style.display = 'block';
+    warn.textContent = '⚠️ ' + invalidas.length + ' linha(s) serão ignoradas por falta de nome ou preço válido.';
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
+function impMassaLimpar() {
+  document.getElementById('imp-massa-txt').value = '';
+  document.getElementById('imp-massa-prev').style.display = 'none';
+  document.getElementById('imp-massa-btn').disabled = true;
+}
+
+function impMassaSalvar() {
+  const txt = document.getElementById('imp-massa-txt').value;
+  const linhas = impMassaParseLinhas(txt).filter(l => l.ok);
+  if (!linhas.length) return;
+
+  let adicionados = 0, atualizados = 0;
+  linhas.forEach(l => {
+    // Se já existe produto com mesmo nome (ignora maiúsculas), atualiza
+    const exist = produtos.find(p => p.nome.toLowerCase() === l.nome.toLowerCase());
+    if (exist) {
+      exist.preco = l.preco;
+      if (l.qtd > 0) exist.qtd = l.qtd;
+      if (l.cod) exist.cod = l.cod;
+      atualizados++;
+    } else {
+      produtos.push({ id: Date.now() + Math.random(), nome: l.nome, preco: l.preco, qtd: l.qtd, cod: l.cod, venc: '' });
+      adicionados++;
+    }
+  });
+
+  salvar();
+  renderEst();
+  closeModal('mo-import-massa');
+  toast('✅ ' + adicionados + ' adicionado(s), ' + atualizados + ' atualizado(s)!');
 }
 
 // ── CÂMERA / LEITOR DE CÓDIGO DE BARRAS ───────────────
